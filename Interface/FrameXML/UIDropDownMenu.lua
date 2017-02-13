@@ -232,6 +232,33 @@ function UIDropDownMenu_CreateFrames(level, index)
 	end
 end
 
+function UIDropDownMenu_AddSeparator(info, level)
+	info.text = nil;
+	info.hasArrow = false;
+	info.dist = 0;
+	info.isTitle = true;
+	info.isUninteractable = true;
+	info.notCheckable = true;
+	info.iconOnly = true;
+	info.icon = "Interface\\Common\\UI-TooltipDivider-Transparent";
+	info.tCoordLeft = 0;
+	info.tCoordRight = 1;
+	info.tCoordTop = 0;
+	info.tCoordBottom = 1;
+	info.tSizeX = 0;
+	info.tSizeY = 8;
+	info.tFitDropDownSizeX = true;
+	info.iconInfo = { tCoordLeft = info.tCoordLeft,
+							tCoordRight = info.tCoordRight,
+							tCoordTop = info.tCoordTop,
+							tCoordBottom = info.tCoordBottom,
+							tSizeX = info.tSizeX,
+							tSizeY = info.tSizeY,
+							tFitDropDownSizeX = info.tFitDropDownSizeX };
+
+	UIDropDownMenu_AddButton(info, level);
+end
+
 function UIDropDownMenu_AddButton(info, level)
 	--[[
 	Might to uncomment this if there are performance issues 
@@ -271,13 +298,13 @@ function UIDropDownMenu_AddButton(info, level)
 	
 	-- If not clickable then disable the button and set it white
 	if ( info.notClickable ) then
-		info.disabled = 1;
+		info.disabled = true;
 		button:SetDisabledFontObject(GameFontHighlightSmallLeft);
 	end
 
 	-- Set the text color and disable it if its a title
 	if ( info.isTitle ) then
-		info.disabled = 1;
+		info.disabled = true;
 		button:SetDisabledFontObject(GameFontNormalSmallLeft);
 	end
 	
@@ -1013,6 +1040,9 @@ function UIDropDownMenu_OnHide(self)
 	end
 	CloseDropDownMenus(id+1);
 	OPEN_DROPDOWNMENUS[id] = nil;
+	if (id == 1) then
+		UIDROPDOWNMENU_OPEN_MENU = nil;
+	end
 end
 
 function UIDropDownMenu_SetWidth(frame, width, padding)

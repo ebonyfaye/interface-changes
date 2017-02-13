@@ -2,6 +2,7 @@ MERCHANT_ITEMS_PER_PAGE = 10;
 BUYBACK_ITEMS_PER_PAGE = 12;
 MAX_ITEM_COST = 3;
 MAX_MERCHANT_CURRENCIES = 6;
+local MAX_MONEY_DISPLAY_WIDTH = 120;
 
 function MerchantFrame_OnLoad(self)
 	self:RegisterEvent("MERCHANT_UPDATE");
@@ -9,6 +10,7 @@ function MerchantFrame_OnLoad(self)
 	self:RegisterEvent("MERCHANT_SHOW");
 	self:RegisterEvent("GUILDBANK_UPDATE_MONEY");
 	self:RegisterEvent("HEIRLOOMS_UPDATED");
+	self:RegisterEvent("MERCHANT_CONFIRM_TRADE_TIMER_REMOVAL");
 	self:RegisterForDrag("LeftButton");
 	self.page = 1;
 	-- Tab Handling code
@@ -26,6 +28,7 @@ function MerchantFrame_OnEvent(self, event, ...)
 		self.update = true;
 	elseif ( event == "MERCHANT_CLOSED" ) then
 		self:UnregisterEvent("CURRENCY_DISPLAY_UPDATE");
+		StaticPopup_Hide("CONFIRM_MERCHANT_TRADE_TIMER_REMOVAL");
 		HideUIPanel(self);
 	elseif ( event == "MERCHANT_SHOW" ) then
 		ShowUIPanel(self);
@@ -46,6 +49,9 @@ function MerchantFrame_OnEvent(self, event, ...)
 		if itemID and updateReason == "NEW" then
 			MerchantFrame_Update();
 		end
+	elseif ( event == "MERCHANT_CONFIRM_TRADE_TIMER_REMOVAL" ) then
+		local item = ...;
+		StaticPopup_Show("CONFIRM_MERCHANT_TRADE_TIMER_REMOVAL", item);
 	end
 end
 
@@ -140,7 +146,8 @@ function MerchantFrame_UpdateMerchantInfo()
 				itemButton.name = name;
 				itemButton.link = GetMerchantItemLink(index);
 				itemButton.texture = texture;
-				MerchantFrame_UpdateAltCurrency(index, i);
+				local altCurrencyWidth = MerchantFrame_UpdateAltCurrency(index, i);
+				MoneyFrame_SetMaxDisplayWidth(merchantMoney, MAX_MONEY_DISPLAY_WIDTH - altCurrencyWidth);
 				MoneyFrame_Update(merchantMoney:GetName(), price);
 				merchantAltCurrency:ClearAllPoints();
 				merchantAltCurrency:SetPoint("LEFT", merchantMoney:GetName(), "RIGHT", -14, 0);
@@ -152,6 +159,7 @@ function MerchantFrame_UpdateMerchantInfo()
 				itemButton.name = name;
 				itemButton.link = GetMerchantItemLink(index);
 				itemButton.texture = texture;
+				MoneyFrame_SetMaxDisplayWidth(merchantMoney, MAX_MONEY_DISPLAY_WIDTH);
 				MoneyFrame_Update(merchantMoney:GetName(), price);
 				merchantAltCurrency:Hide();
 				merchantMoney:Show();
@@ -273,37 +281,40 @@ function MerchantFrame_UpdateMerchantInfo()
 	MerchantItem9:SetPoint("TOPLEFT", "MerchantItem7", "BOTTOMLEFT", 0, -8);
 end
 
-function MerchantFrame_UpdateAltCurrency(index, i)
-	local itemTexture, itemValue, button;
+function MerchantFrame_UpdateAltCurrency(index, indexOnPage)
 	local itemCount = GetMerchantItemCostInfo(index);
-	local frameName = "MerchantItem"..i.."AltCurrencyFrame";
+	local frameName = "MerchantItem"..indexOnPage.."AltCurrencyFrame";
+	local usedCurrencies = 0;
+	local width = 0;
 
 	-- update Alt Currency Frame with itemValues
 	if ( itemCount > 0 ) then
 		for i=1, MAX_ITEM_COST, 1 do
-			button = _G[frameName.."Item"..i];
-			button.index = index;
-			button.item = i;
-
-			itemTexture, itemValue, button.itemLink = GetMerchantItemCostItem(index, i);
-			
-			AltCurrencyFrame_Update(frameName.."Item"..i, itemTexture, itemValue);
-			-- Anchor items based on how many item costs there are.
-
-			if ( i > 1 ) then
-				button:SetPoint("LEFT", frameName.."Item"..i-1, "RIGHT", 4, 0);
-			end
-			if ( not itemTexture ) then
-				button:Hide();
-			else
+			local itemTexture, itemValue, itemLink = GetMerchantItemCostItem(index, i);
+			if ( itemTexture ) then
+				usedCurrencies = usedCurrencies + 1;
+				local button = _G[frameName.."Item"..usedCurrencies];
+				button.index = index;
+				button.item = i;
+				button.itemLink = itemLink;
+				AltCurrencyFrame_Update(frameName.."Item"..usedCurrencies, itemTexture, itemValue);
+				width = width + button:GetWidth();
+				if ( usedCurrencies > 1 ) then
+					-- button spacing;
+					width = width + 4;
+				end
 				button:Show();
 			end
+		end
+		for i = usedCurrencies + 1, MAX_ITEM_COST do
+			_G[frameName.."Item"..i]:Hide();
 		end
 	else
 		for i=1, MAX_ITEM_COST, 1 do
 			_G[frameName.."Item"..i]:Hide();
 		end
 	end
+	return width;
 end
 
 function MerchantFrame_UpdateBuybackInfo()
@@ -713,7 +724,6 @@ function MerchantFrame_UpdateCurrencies()
 		MerchantFrame:RegisterEvent("CURRENCY_DISPLAY_UPDATE");
 		MerchantExtraCurrencyInset:Show();
 		MerchantExtraCurrencyBg:Show();
-		MerchantFrame_OrderCurrencies(currencies);
 		local numCurrencies = #currencies;
 		if ( numCurrencies > 3 ) then
 			MerchantMoneyFrame:Hide();
@@ -761,77 +771,6 @@ function MerchantFrame_UpdateCurrencies()
 			tokenButton:Hide();
 		else
 			break;
-		end
-	end
-end
-
-function MerchantFrame_OrderCurrencies(currencyTable)
-	local orderedCurrencies = { };
-	local numPVE = 0;
-	local numPVP = 0;
-	local numOther = 0;
-	local isPVPfirst;
-	-- the first 3 items are on the right side of the merchant window, the last 3 items are on the left side
-	-- keep valor/justice and conquest/honor together, so if all 4 exist move 1 group together to the left side - this might leave a gap that might be filled by an other
-	-- valor/conquest are the equivalent of gold and should always be on the leftmost edge of the window side
-	-- the first pvp or pve currency should be the type of vendor (pvp or pve) so keep the currency for that on the right window side
-	local numCurrencies = #currencyTable;
-	for i = 1, numCurrencies do
-		-- 1st index empty for PVP/PVE split
-		if ( currencyTable[i] == VALOR_CURRENCY ) then
-			orderedCurrencies[2] = currencyTable[i];
-			numPVE = numPVE + 1;
-		elseif ( currencyTable[i] == JUSTICE_CURRENCY ) then
-			orderedCurrencies[3] = currencyTable[i];
-			numPVE = numPVE + 1;
-		-- 4th index empty for PVP/PVE split
-		elseif ( currencyTable[i] == CONQUEST_CURRENCY ) then
-			orderedCurrencies[5] = currencyTable[i];
-			numPVP = numPVP + 1;
-			if ( numPVE == 0 ) then
-				isPVPfirst = true;
-			end
-		elseif ( currencyTable[i] == HONOR_CURRENCY ) then
-			orderedCurrencies[6] = currencyTable[i];
-			numPVP = numPVP + 1;
-			if ( numPVE == 0 ) then
-				isPVPfirst = true;
-			end
-		else
-			orderedCurrencies[7 + numOther] = currencyTable[i];
-			numOther = numOther + 1;
-		end
-	end
-
-	-- if PVP currency was found before PVE, switch them around
-	if ( isPVPfirst and numPVE > 0 ) then
-		orderedCurrencies[2], orderedCurrencies[5] = orderedCurrencies[5], orderedCurrencies[2];	-- swap valor/conquest
-		orderedCurrencies[3], orderedCurrencies[6] = orderedCurrencies[6], orderedCurrencies[3];	-- swap justice/honor
-	end
-
-	-- if all 4 special currencies exist, there may be a gap between the 2 pairs
-	if ( numPVP + numPVE == 4 ) then
-		-- move an other currency into the gap if there is one
-		if ( numOther > 0 ) then
-			numOther = numOther - 1;
-			orderedCurrencies[4] = orderedCurrencies[7 + numOther];
-			orderedCurrencies[7 + numOther] = nil;
-		else
-			orderedCurrencies[1] = 0;
-		end
-	end
-	
-	-- now put back in the original table
-	local numInserted = 0;
-	local insertionIndex = 1;
-	wipe(currencyTable);
-	for i = 1, 6 + numOther do
-		if ( orderedCurrencies[i] ) then
-			tinsert(currencyTable, insertionIndex, orderedCurrencies[i]);
-			numInserted = numInserted + 1;
-			if ( numInserted == 3 ) then
-				insertionIndex = 4;
-			end
 		end
 	end
 end

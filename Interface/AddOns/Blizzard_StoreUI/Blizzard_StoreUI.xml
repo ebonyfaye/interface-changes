@@ -597,7 +597,7 @@
 					<Texture parentKey="Icon" hidden="true">
 						<Size x="63" y="63" />
 						<Anchors>
-							<Anchor point="CENTER" relativePoint="TOP" x="0" y="-66" />
+							<Anchor point="CENTER" relativePoint="TOP" x="0" y="-69" />
 						</Anchors>
 					</Texture>
 				</Layer>
@@ -779,7 +779,7 @@
 					<Texture parentKey="Icon" hidden="true">
 						<Size x="68" y="68" />
 						<Anchors>
-							<Anchor point="TOPLEFT" x="86" y="-96" />
+							<Anchor point="TOPLEFT" x="88" y="-99" />
 						</Anchors>
 					</Texture>
 				</Layer>
@@ -801,6 +801,12 @@
 						<Anchors>
 							<Anchor point="TOPLEFT" relativeKey="$parent.IconBorder" relativePoint="TOPRIGHT" x="-45" y="-70" />
 						</Anchors>
+						<Shadow>
+							<Offset>
+								<AbsDimension x="1" y="-1"/>
+							</Offset>
+							<Color r="0" g="0" b="0"/>
+						</Shadow>
 						<Color r="1" g="1" b="1" />
 					</FontString>
 					<FontString parentKey="Description" inherits="GameFontNormalLarge" justifyH="LEFT" justifyV="TOP">
@@ -891,7 +897,7 @@
 					</Layers>
 					<Animations>
 						<AnimationGroup parentKey="PulseAnim" looping="BOUNCE">
-							<Alpha change="-1" duration="1.5" order="1"/>
+							<Alpha fromAlpha="1" toAlpha="0" duration="1.5" order="1"/>
 						</AnimationGroup>
 					</Animations>
 				</Frame>
@@ -907,7 +913,7 @@
 					</Layers>
 					<Animations>
 						<AnimationGroup parentKey="FadeAnim">
-							<Alpha change="-0.75" duration=".3"/>
+							<Alpha fromAlpha="0.75" toAlpha="0" duration=".3"/>
 							<Scripts>
 								<OnFinished>
 									self:GetParent():Hide();
@@ -1133,7 +1139,7 @@
 					</Layers>
 					<Animations>
 						<AnimationGroup parentKey="PulseAnim" looping="BOUNCE">
-							<Alpha change="-1" duration="1.5" order="1"/>
+							<Alpha fromAlpha="1" toAlpha="0" duration="1.5" order="1"/>
 						</AnimationGroup>
 					</Animations>
 				</Frame>
@@ -1149,7 +1155,7 @@
 					</Layers>
 					<Animations>
 						<AnimationGroup parentKey="FadeAnim">
-							<Alpha change="-0.75" duration=".3"/>
+							<Alpha fromAlpha="0.75" toAlpha="0" duration=".3"/>
 							<Scripts>
 								<OnFinished>
 									self:GetParent():Hide();
@@ -1912,8 +1918,8 @@
 					<Size x="140" y="30" />
 					<Animations>
 						<AnimationGroup parentKey="PulseAnim">
-							<Alpha childKey="Flash" change="1.0" duration="0.5" order="1"/>
-							<Alpha childKey="Flash" change="-1.0" duration="0.5" order="2"/>
+							<Alpha childKey="Flash" fromAlpha="0" toAlpha="1" duration="0.5" order="1"/>
+							<Alpha childKey="Flash" fromAlpha="1" toAlpha="0" duration="0.5" order="2"/>
 						</AnimationGroup>
 					</Animations>
 					<Anchors>
@@ -2094,9 +2100,9 @@
 				</Layer>
 				<Layer level="ARTWORK" textureSubLevel="1">
 					<Texture parentKey="Icon">
-						<Size x="63" y="63" />
+						<Size x="64" y="64" />
 						<Anchors>
-							<Anchor point="TOP" x="-120" y="-66" />
+							<Anchor point="TOP" x="-120" y="-68" />
 						</Anchors>
 					</Texture>
 				</Layer>
@@ -2161,7 +2167,7 @@
 							</Anchors>
 							<Scripts>
 								<OnHyperlinkClick>
-									local linkType, index = (":"):split(link);
+									local linkType, index = string.split(":", link);
 									if ( linkType == "urlIndex" ) then
 										LoadURLIndex(tonumber(index));
 									end
@@ -2187,7 +2193,7 @@
 					</Anchors>
 					<Scripts>
 						<OnHyperlinkClick>
-							local linkType, index = (":"):split(link);
+							local linkType, index = string.split(":", link);
 							if ( linkType == "urlIndex" ) then
 								LoadURLIndex(tonumber(index));
 							end
@@ -2307,7 +2313,7 @@
 					</Anchors>
 					<Scripts>
 						<OnHyperlinkClick>
-							local linkType, index = (":"):split(link);
+							local linkType, index = string.split(":", link);
 							if ( linkType == "urlIndex" ) then
 								LoadURLIndex(tonumber(index));
 							end
@@ -2438,6 +2444,17 @@
 								</OnLeave>
 							</Scripts>
 						</EditBox>
+						<Frame parentKey="DestinationRealmSelector" inherits="StoreDropDownMenuTemplate" enableMouse="true">
+							<Size x="150" y="22"/>
+							<Anchors>
+								<Anchor point="TOPLEFT" relativeKey="$parent.SelectedCharacterFrame" relativePoint="BOTTOMLEFT" x="-16" y="-24"/>
+							</Anchors>
+							<Scripts>
+								<OnLoad>
+									self.Button:SetScript("OnClick", VASCharacterSelectionDestinationRealmSelector_OnClick);
+								</OnLoad>
+							</Scripts>
+						</Frame>
 					</Frames>
 				</Frame>
 			</Frames>

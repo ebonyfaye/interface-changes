@@ -3,8 +3,8 @@
 -- Provides the method definitions for restricted frames.
 -- See RestrictedInfrastructure.lua for more details.
 --
--- Daniel Stephens (iriel@vigilance-committee.org)
--- Nevin Flanagan (alestane@comcast.net)
+-- Daniel Stephens
+-- Nevin Flanagan
 --
 -- Various methods (SetPoint/SetParent) take frame handles as relative
 -- frame arguments also. You can safely obtain frame handles (out of combat)
@@ -95,6 +95,14 @@ end
 
 function HANDLE:IsMouseEnabled()
     return GetHandleFrame(self):IsMouseEnabled();
+end
+
+function HANDLE:IsMouseClickEnabled()
+    return GetHandleFrame(self):IsMouseClickEnabled();
+end
+
+function HANDLE:IsMouseMotionEnabled()
+    return GetHandleFrame(self):IsMouseMotionEnabled();
 end
 
 function HANDLE:IsKeyboardEnabled()

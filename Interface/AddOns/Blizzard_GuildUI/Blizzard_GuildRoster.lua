@@ -385,13 +385,13 @@ function GuildRosterButton_OnClick(self, button)
 			end
 			GuildRoster_Update();
 		else
-			local fullName, rank, rankIndex, level, class, zone, note, officernote, online, isAway, classFileName, achievementPoints, achievementRank, isMobile = GetGuildRosterInfo(self.guildIndex);
-			GuildRoster_ShowMemberDropDown(fullName, online, isMobile);
+			local fullName, rank, rankIndex, level, class, zone, note, officernote, online, isAway, classFileName, achievementPoints, achievementRank, isMobile, sorEligible, rep, guid = GetGuildRosterInfo(self.guildIndex);
+			GuildRoster_ShowMemberDropDown(fullName, online, isMobile, guid);
 		end
 	end
 end
 
-function GuildRoster_ShowMemberDropDown(name, online, isMobile)
+function GuildRoster_ShowMemberDropDown(name, online, isMobile, guid)
 	local initFunc = GuildMemberDropDown_Initialize;
 	if ( not online and not isMobile ) then
 		initFunc = GuildMemberOfflineDropDown_Initialize;
@@ -400,11 +400,12 @@ function GuildRoster_ShowMemberDropDown(name, online, isMobile)
 	GuildMemberDropDown.name = name;
 	GuildMemberDropDown.isMobile = isMobile;
 	GuildMemberDropDown.initialize = initFunc;
+	GuildMemberDropDown.guid = guid; --Not included on tradeskill pane
 	ToggleDropDownMenu(1, nil, GuildMemberDropDown, "cursor");
 end
 
 function GuildMemberDropDown_Initialize()
-	UnitPopup_ShowMenu(UIDROPDOWNMENU_OPEN_MENU, "GUILD", nil, GuildMemberDropDown.name);
+	UnitPopup_ShowMenu(UIDROPDOWNMENU_OPEN_MENU, "GUILD", nil, GuildMemberDropDown.name, { guid = GuildMemberDropDown.guid });
 end
 
 function GuildMemberOfflineDropDown_Initialize()
@@ -611,16 +612,6 @@ function GuildRosterViewDropdown_Initialize()
 	info.text = GUILD_STATUS;
 	info.value = "guildStatus";
 	UIDropDownMenu_AddButton(info);
-	--[[
-	if ( GetGuildLevelEnabled() ) then
-		info.text = GUILD_XP_WEEKLY;
-		info.value = "weeklyxp";
-		UIDropDownMenu_AddButton(info);
-		info.text = GUILD_XP_TOTAL;
-		info.value = "totalxp";
-		UIDropDownMenu_AddButton(info);
-	end
-	--]]
 	info.text = ACHIEVEMENT_POINTS;
 	info.value = "achievement";
 	UIDropDownMenu_AddButton(info);

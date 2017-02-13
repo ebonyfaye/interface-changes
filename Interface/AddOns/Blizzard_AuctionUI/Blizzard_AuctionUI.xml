@@ -126,16 +126,16 @@
 							<Anchors>
 								<Anchor point="TOPLEFT">
 									<Offset>
-										<AbsDimension x="80" y="-41"/>
+										<AbsDimension x="80" y="-38"/>
 									</Offset>
 								</Anchor>
 							</Anchors>
 						</FontString>
 						<FontString name="BrowseLevelText" inherits="GameFontHighlightSmall" text="LEVEL_RANGE">
 							<Anchors>
-								<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT">
+								<Anchor point="TOPLEFT">
 									<Offset>
-										<AbsDimension x="230" y="-47"/>
+										<AbsDimension x="230" y="-38"/>
 									</Offset>
 								</Anchor>
 							</Anchors>
@@ -348,7 +348,7 @@
 						</Layers>
 						<Scripts>
 							<OnVerticalScroll>
-								FauxScrollFrame_OnVerticalScroll(self, offset, BROWSE_FILTER_HEIGHT, AuctionFrameFilters_Update);
+								FauxScrollFrame_OnVerticalScroll(self, offset, BROWSE_FILTER_HEIGHT, function() AuctionFrameFilters_Update() end);
 							</OnVerticalScroll>
 						</Scripts>
 					</ScrollFrame>
@@ -614,11 +614,12 @@
 										self.TitleText:SetText(TUTORIAL_TOKEN_ABOUT_TOKENS);
 									</OnLoad>
 									<OnShow>
-										local redeemIndex = select(3, C_WowTokenPublic.GetCommerceSystemStatus());
-										if (redeemIndex == LE_CONSUMABLE_TOKEN_REDEEM_FOR_SUB_AMOUNT_30_DAYS) then
+										local balanceEnabled = select(3, C_WowTokenPublic.GetCommerceSystemStatus());
+										self.LeftDisplay.Tutorial3:SetIndentedWordWrap(true);
+										if (balanceEnabled) then
+											self.LeftDisplay.Tutorial3:SetText(TUTORIAL_TOKEN_GAME_TIME_STEP_2_BALANCE:format(WowTokenRedemptionFrame_GetBalanceString()));
+										else
 											self.LeftDisplay.Tutorial3:SetText(TUTORIAL_TOKEN_GAME_TIME_STEP_2);
-										elseif (redeemIndex == LE_CONSUMABLE_TOKEN_REDEEM_FOR_SUB_AMOUNT_2700_MINUTES) then
-											self.LeftDisplay.Tutorial3:SetText(TUTORIAL_TOKEN_GAME_TIME_STEP_2_MINUTES);
 										end
 									</OnShow>
 								</Scripts>
@@ -805,7 +806,7 @@
 							</OnClick>
 						</Scripts>
 					</Button>
-					<Button name="BrowseCurrentBidSort" inherits="AuctionSortButtonTemplate" text="CURRENT_BID">
+					<Button name="BrowseCurrentBidSort" inherits="AuctionSortButtonTemplate" text="AUCTION_BROWSE_UNIT_PRICE_SORT">
 						<Size>
 							<AbsDimension x="207" y="19"/>
 						</Size>
@@ -818,7 +819,7 @@
 						</Anchors>
 						<Scripts>
 							<OnClick>
-								AuctionFrame_OnClickSortColumn("list", "bid");
+								AuctionFrame_OnClickSortColumn("list", "unitprice");
 							</OnClick>
 						</Scripts>
 					</Button>
@@ -901,7 +902,7 @@
 						<Anchors>
 							<Anchor point="TOPLEFT" relativeTo="BrowseNameText" relativePoint="BOTTOMLEFT">
 								<Offset>
-									<AbsDimension x="3" y="-2"/>
+									<AbsDimension x="3" y="-5"/>
 								</Offset>
 							</Anchor>
 						</Anchors>
@@ -927,7 +928,7 @@
 						<Anchors>
 							<Anchor point="TOPLEFT" relativeTo="BrowseLevelText" relativePoint="BOTTOMLEFT">
 								<Offset>
-									<AbsDimension x="3" y="-6"/>
+									<AbsDimension x="3" y="-5"/>
 								</Offset>
 							</Anchor>
 						</Anchors>
@@ -979,9 +980,9 @@
 					</EditBox>
 					<Frame name="BrowseDropDown" inherits="UIDropDownMenuTemplate" id="1">
 						<Anchors>
-							<Anchor point="TOPLEFT" relativeTo="BrowseLevelText" relativePoint="BOTTOMRIGHT">
+							<Anchor point="TOPLEFT" relativeTo="BrowseMaxLevel" relativePoint="TOPRIGHT">
 								<Offset>
-									<AbsDimension x="-5" y="-1"/>
+									<AbsDimension x="-6" y="5"/>
 								</Offset>
 							</Anchor>
 						</Anchors>
@@ -1827,6 +1828,14 @@
 								</Texture>
 							</Layer>
 							<Layer level="OVERLAY">
+								<Texture parentKey="IconBorder" file="Interface\Common\WhiteIconFrame" hidden="true">
+									<Size x="37" y="37"/>
+									<Anchors>
+										<Anchor point="CENTER"/>
+									</Anchors>
+								</Texture>
+							</Layer>
+							<Layer level="OVERLAY">
 								<FontString name="$parentCount" inherits="NumberFontNormal" justifyH="RIGHT" hidden="true">
 									<Anchors>
 										<Anchor point="BOTTOMRIGHT" x="-5" y="2"/>
@@ -2379,12 +2388,12 @@
 				</Anchors>
 				<Scripts>
 					<OnLoad>
-						AuctionProgressBarSpark:Hide();
-						AuctionProgressBarFlash:Hide();
-						AuctionProgressBarIcon:Show();
-						AuctionProgressBarIcon:SetWidth(24);
-						AuctionProgressBarIcon:SetHeight(24);
-						AuctionProgressBarIcon:SetPoint("RIGHT", "$parent", "LEFT", -10, 2);
+						AuctionProgressBar.Spark:Hide();
+						AuctionProgressBar.Flash:Hide();
+						AuctionProgressBar.Icon:Show();
+						AuctionProgressBar.Icon:SetWidth(24);
+						AuctionProgressBar.Icon:SetHeight(24);
+						AuctionProgressBar.Icon:SetPoint("RIGHT", "$parent", "LEFT", -10, 2);
 					</OnLoad>
 					<OnEvent></OnEvent>
 					<OnShow></OnShow>

@@ -1,24 +1,39 @@
 # Do not delete the following line!
-## Interface: 60200
-GlobalStrings.lua
-Constants.lua
-Localization.xml
-Fonts.xml
-FontStyles.xml
+## Interface: 70100
 
 ## add C namespace augmentations here
 ..\SharedXML\C_TimerAugment.lua
 
 ## add snippets independent of modules here
 ..\SharedXML\Util.lua
+..\SharedXML\CircularBuffer.lua
+..\SharedXML\FontableFrameMixin.lua
+..\SharedXML\Vector2D.lua
+MixinUtil.lua
+
+## intrinsics
+..\SharedXML\ScrollingMessageFrame.xml
+
+
+AnimatedStatusBar.xml
 FlowContainer.lua
 FrameLocks.lua
+
+
+Constants.lua
+Localization.xml
+Fonts.xml
+FontStyles.xml
+
 
 ## add new modules below here
 
 BasicControls.xml
 WorldFrame.xml
 UIParent.xml
+QuestUtils.lua
+## IME.xml needs to be loaded after UIParent.xml
+..\SharedXML\IME.xml
 MoneyFrame.lua
 MoneyFrame.xml
 MoneyInputFrame.lua
@@ -33,6 +48,7 @@ SecureTemplates.xml
 SecureHandlerTemplates.xml
 SecureGroupHeaders.xml
 ..\SharedXML\ModelFrames.xml
+WardrobeOutfits.xml
 DressUpFrames.xml
 ItemButtonTemplate.xml
 NavigationBar.xml
@@ -58,14 +74,18 @@ AudioOptionsPanels.xml
 InterfaceOptionsFrame.xml
 InterfaceOptionsPanels.xml
 ..\SharedXML\AddonList.xml
+GarrisonBaseUtils.xml
 AlertFrames.xml
+AlertFrameSystems.xml
 MirrorTimer.xml
 CoinPickupFrame.xml
 StackSplitFrame.xml
 FadingFrame.xml
 ZoneText.xml
+BuilderSpenderFrame.xml
 UnitFrame.xml
 Cooldown.xml
+PVPHonorSystem.xml
 ActionBarController.xml
 TutorialFrame.xml
 Minimap.xml
@@ -73,6 +93,7 @@ GameTime.xml
 ##ActionWindow.xml
 EquipmentFlyout.xml
 BuffFrame.xml
+LowHealthFrame.xml
 CombatFeedback.xml
 UnitPowerBarAlt.xml
 CastingBarFrame.xml
@@ -92,7 +113,6 @@ StatsFrame.xml
 SpellBookFrame.xml
 CharacterFrame.xml
 PaperDollFrame.xml
-PetPaperDollFrame.xml
 ReputationFrame.xml
 QuestFrame.xml
 QuestPOI.xml
@@ -105,12 +125,17 @@ ItemTextFrame.xml
 TaxiFrame.xml
 BankFrame.xml
 ScrollOfResurrection.xml
+RoleSelectionTemplate.xml
+SocialQueue.xml
+QuickJoinToast.xml
 FriendsFrame.xml
+QuickJoin.xml
 RaidFrame.xml
 ChannelFrame.xml
 PetActionBarFrame.xml
 MultiCastActionBarFrame.xml
 MainMenuBarBagButtons.xml
+UnitPositionFrameTemplates.xml
 WorldMapFrame.xml
 QuestMapFrame.xml
 RaidWarning.xml
@@ -139,9 +164,12 @@ MovieRecordingProgress.xml
 RatingMenuFrame.xml
 TalentFrameBase.lua
 TalentFrameTemplates.xml
+ClassPowerBar.xml
 RuneFrame.xml
 ShardBar.xml
 EclipseBarFrame.xml
+ComboFramePlayer.xml
+InsanityBar.xml
 EasyMenu.lua
 ChatConfigFrame.xml
 MovieFrame.xml
@@ -156,6 +184,7 @@ CompactPartyFrame.xml
 RolePoll.xml
 SpellFlyout.xml
 PaladinPowerBar.xml
+MageArcaneChargesBar.xml
 SpellActivationOverlay.xml
 GuildInviteFrame.xml
 GhostFrame.xml
@@ -178,9 +207,11 @@ LossOfControlFrame.xml
 PVPHelper.xml
 MapBar.xml
 ProductChoice.xml
-DraenorZoneAbility.xml
+ZoneAbility.xml
+ArtifactToasts.xml
 ..\SharedXML\ModelPreviewFrame.xml
 SplashFrame.xml
+..\SharedXML\LayoutFrame.xml
 
 #Save off whatever we need available unmodified.
 SecureCapsule.lua

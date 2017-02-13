@@ -79,7 +79,7 @@ function RealmList_Update()
 				button.Load:SetText(LOAD_RECOMMENDED);
 				button.Load:SetTextColor(BLUE_FONT_COLOR.r, BLUE_FONT_COLOR.g, BLUE_FONT_COLOR.b);
 			elseif ( populationState == "FULL" ) then
-				button.Load:SetText(LOAD_NEW);
+				button.Load:SetText(LOAD_FULL);
 				button.Load:SetTextColor(RED_FONT_COLOR.r, RED_FONT_COLOR.g, RED_FONT_COLOR.b);
 			elseif ( populationState == "MEDIUM" ) then
 				button.Load:SetText(LOAD_MEDIUM);
@@ -227,13 +227,15 @@ function RealmList_OnKeyDown(key)
 end
 
 function RealmList_OnOk()
-	-- If trying to join a Full realm then popup a dialog
-	local name, numChars, versionMismatch, isPvP, isRP, populationState, versionMajor, versionMinor, versionRev, versionBuild = C_RealmList.GetRealmInfo(RealmList.selectedRealm);
+	if (RealmList.selectedRealm) then
+		-- If trying to join a Full realm then popup a dialog
+		local name, numChars, versionMismatch, isPvP, isRP, populationState, versionMajor, versionMinor, versionRev, versionBuild = C_RealmList.GetRealmInfo(RealmList.selectedRealm);
 
-	if ( populationState == "FULL" and numChars == 0 ) then
-		GlueDialog_Show("REALM_IS_FULL");
-	else
-		C_RealmList.ConnectToRealm(RealmList.selectedRealm);
+		if ( populationState == "FULL" and numChars == 0 ) then
+			GlueDialog_Show("REALM_IS_FULL");
+		else
+			C_RealmList.ConnectToRealm(RealmList.selectedRealm);
+		end
 	end
 end
 

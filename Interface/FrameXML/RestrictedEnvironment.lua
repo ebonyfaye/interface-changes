@@ -5,8 +5,8 @@
 -- WoW lua API), and functions which provide the same degree of game state
 -- as macro conditionals.
 --
--- Nevin Flanagan (alestane@comcast.net)
--- Daniel Stephens (iriel@vigilance-committee.org)
+-- Nevin Flanagan
+-- Daniel Stephens
 ---------------------------------------------------------------------------
 
 local tostring = tostring;
@@ -84,7 +84,7 @@ local DIRECT_MACRO_CONDITIONAL_NAMES = {
     "IsMounted", "IsSwimming", "IsSubmerged", "IsFlying", "IsFlyableArea",
     "IsIndoors", "IsOutdoors",
 	"HasVehicleActionBar", "HasOverrideActionBar", "HasTempShapeshiftActionBar",
-	"HasOverrideUI", "GetVehicleBarIndex", "GetOverrideBarIndex",
+	"HasBonusActionBar", "GetBonusBarIndex", "GetVehicleBarIndex", "GetOverrideBarIndex",
 	"HasExtraActionBar", "GetTempShapeshiftBarIndex", "CanExitVehicle"
 };
 

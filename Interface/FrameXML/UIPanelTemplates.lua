@@ -43,7 +43,6 @@ ITEM_SEARCHBAR_LIST = {
 	"GuildItemSearchBox",
 	"VoidItemSearchBox",
 	"BankItemSearchBox",
-	"HeirloomsJournalSearchBox",
 };
 
 function BagSearch_OnHide(self)
@@ -278,7 +277,6 @@ end
 
 function InputScrollFrame_OnLoad(self)
 	local scrollBar = self.ScrollBar;
-	scrollBar:SetFrameLevel(self.FocusButton:GetFrameLevel() + 2);
 	scrollBar:ClearAllPoints();
 	scrollBar:SetPoint("TOPLEFT", self, "TOPRIGHT", -13, -11);
 	scrollBar:SetPoint("BOTTOMLEFT", self, "BOTTOMRIGHT", -13, 9);
@@ -347,14 +345,30 @@ function SetCheckButtonIsRadio(button, isRadio)
 	end	
 end
 
----------------------------------------------------------------------------------
---- Follower Portrait                                                         ---
----------------------------------------------------------------------------------
-function GarrisonFollowerPortrait_Set(portrait, iconFileID)
-	if (iconFileID == nil or iconFileID == 0) then
-		-- unknown icon file ID; use the default silhouette portrait
-		portrait:SetTexture("Interface\\Garrison\\Portraits\\FollowerPortrait_NoPortrait");
-	else
-		portrait:SetToFileData(iconFileID);
+--Inline hyperlinks
+function InlineHyperlinkFrame_OnEnter(self, link, text, fontString, left, bottom, width, height)
+	self.tooltipFrame:SetOwner(self, "ANCHOR_PRESERVE");
+	self.tooltipFrame:ClearAllPoints();
+	self.tooltipFrame:SetPoint("BOTTOMLEFT", fontString, "TOPLEFT", left + width, bottom);
+	self.tooltipFrame:SetHyperlink(link);
+end
+
+function InlineHyperlinkFrame_OnLeave(self)
+	self.tooltipFrame:Hide();
+end
+
+function InlineHyperlinkFrame_OnClick(self, link, text, button)
+	if ( self.hasIconHyperlinks ) then
+		local fixedLink;
+		local _, _, linkType, linkID = string.find(link, "([%a]+):([%d]+)");
+		if ( linkType == "currency" ) then
+			fixedLink = GetCurrencyLink(linkID);
+		end
+
+		if ( fixedLink ) then
+			HandleModifiedItemClick(fixedLink);
+			return;
+		end
 	end
+	SetItemRef(link, text, button);
 end
