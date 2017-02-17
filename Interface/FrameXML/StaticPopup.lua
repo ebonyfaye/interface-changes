@@ -10,7 +10,7 @@ StaticPopupDialogs["CONFIRM_OVERWRITE_EQUIPMENT_SET"] = {
 	text = CONFIRM_OVERWRITE_EQUIPMENT_SET,
 	button1 = YES,
 	button2 = NO,
-	OnAccept = function (self) SaveEquipmentSet(self.data, self.selectedIcon); GearManagerDialogPopup:Hide(); end,
+	OnAccept = function (self) C_EquipmentSet.SaveEquipmentSet(self.data, self.selectedIcon); GearManagerDialogPopup:Hide(); end,
 	OnCancel = function (self) end,
 	OnHide = function (self) self.data = nil; self.selectedIcon = nil; end,
 	hideOnEscape = 1,
@@ -23,7 +23,7 @@ StaticPopupDialogs["CONFIRM_SAVE_EQUIPMENT_SET"] = {
 	text = CONFIRM_SAVE_EQUIPMENT_SET,
 	button1 = YES,
 	button2 = NO,
-	OnAccept = function (self) SaveEquipmentSet(self.data); end,
+	OnAccept = function (self) C_EquipmentSet.SaveEquipmentSet(self.data); end,
 	OnCancel = function (self) end,
 	OnHide = function (self) self.data = nil; end,
 	hideOnEscape = 1,
@@ -79,7 +79,7 @@ StaticPopupDialogs["CONFIRM_DELETE_EQUIPMENT_SET"] = {
 	text = CONFIRM_DELETE_EQUIPMENT_SET,
 	button1 = YES,
 	button2 = NO,
-	OnAccept = function (self) DeleteEquipmentSet(self.data); end,
+	OnAccept = function (self) C_EquipmentSet.DeleteEquipmentSet(self.data); end,
 	OnCancel = function (self) end,
 	hideOnEscape = 1,
 	timeout = 0,
@@ -1453,9 +1453,29 @@ StaticPopupDialogs["RESURRECT_NO_SICKNESS"] = {
 StaticPopupDialogs["RESURRECT_NO_TIMER"] = {
 	text = RESURRECT_REQUEST_NO_SICKNESS,
 	button1 = ACCEPT,
+	button1Pulse = true,
 	button2 = DECLINE,
 	OnShow = function(self)
 		self.timeleft = GetCorpseRecoveryDelay() + 60;
+		self.declineTimeLeft = 5
+		self.button2:SetText(self.declineTimeLeft)
+		self.button2:Disable();
+		self.ticker = C_Timer.NewTicker(1, function()
+			self.declineTimeLeft = self.declineTimeLeft - 1;
+			if (self.declineTimeLeft == 0) then
+				self.button2:SetText(DECLINE)
+				self.button2:Enable();
+				self.ticker:Cancel();
+				return;
+			else
+				self.button2:SetText(self.declineTimeLeft);
+			end
+		end)
+		
+	end,
+	OnHide = function(self)
+		self.ticker:Cancel();
+		self.ticker = nil;
 	end,
 	OnAccept = function(self)
 		AcceptResurrect();
@@ -1552,6 +1572,58 @@ StaticPopupDialogs["GROUP_INVITE_CONFIRMATION"] = {
 	end,
 	OnHide = function(self)
 		UpdateInviteConfirmationDialogs();
+	end,
+	OnUpdate = function(self)
+		if ( not self.linkRegion or not self.nextUpdateTime ) then
+			return;
+		end
+
+		local timeNow = GetTime();
+		if ( self.nextUpdateTime > timeNow ) then
+			return;
+		end
+
+		local _, _, guid, _, _, level, spec, itemLevel = GetInviteConfirmationInfo(self.data);
+		local className, classFilename, _, _, gender, characterName, _ = GetPlayerInfoByGUID(guid);
+
+		GameTooltip:SetOwner(self.linkRegion);
+
+		if ( className ) then
+			self.nextUpdateTime = nil; -- The tooltip will be created with valid data, no more updates necessary.
+
+			local _, _, _, colorCode = GetClassColor(classFilename);
+			GameTooltip:SetText(WrapTextInColorCode(characterName, colorCode));
+
+			local _, specName = GetSpecializationInfoByID(spec, gender);
+			local characterLine = CHARACTER_LINK_CLASS_LEVEL_SPEC_TOOLTIP:format(level, className, specName);
+			local itemLevelLine = CHARACTER_LINK_ITEM_LEVEL_TOOLTIP:format(itemLevel);
+
+			GameTooltip:AddLine(characterLine, HIGHLIGHT_FONT_COLOR:GetRGB());
+			GameTooltip:AddLine(itemLevelLine, HIGHLIGHT_FONT_COLOR:GetRGB());
+		else
+			self.nextUpdateTime = timeNow + .5;
+			GameTooltip:SetText(RETRIEVING_DATA, RED_FONT_COLOR:GetRGB());
+		end
+
+		GameTooltip:Show();
+	end,
+	OnHyperlinkClick = function(self, link, text, button)
+		-- Only allowing left button for now.
+		if ( button == "LeftButton" ) then
+			SetItemRef(link, text, button);
+		end
+	end,
+	OnHyperlinkEnter = function(self, link, text, region, boundsLeft, boundsBottom, boundsWidth, boundsHeight)
+		self.linkRegion = region;
+		self.linkText = text;
+		self.nextUpdateTime = GetTime();
+		StaticPopupDialogs["GROUP_INVITE_CONFIRMATION"].OnUpdate(self);
+	end,
+	OnHyperlinkLeave = function(self)
+		self.linkRegion = nil;
+		self.linkText = nil;
+		self.nextUpdateTime = nil;
+		GameTooltip:Hide();
 	end,
 	whileDead = 1,
 };
@@ -3127,6 +3199,7 @@ StaticPopupDialogs["VOTE_BOOT_PLAYER"] = {
 	text = VOTE_BOOT_PLAYER,
 	button1 = YES,
 	button2 = NO,
+	StartDelay = function() return 3 end,
 	OnAccept = function(self)
 		SetLFGBootVote(true);
 	end,
@@ -3439,6 +3512,21 @@ StaticPopupDialogs["CONFIRM_LEAVE_BATTLEFIELD"] = {
 	showAlert = 1,
 }
 
+StaticPopupDialogs["CONFIRM_SURRENDER_ARENA"] = {
+	text = CONFIRM_SURRENDER_ARENA,
+	button1 = YES,
+	button2 = CANCEL,
+	OnShow = function(self)
+		self.text:SetText(CONFIRM_SURRENDER_ARENA);
+	end,
+	OnAccept = function(self, data)
+		SurrenderArena();
+	end,
+	whileDead = 1,
+	hideOnEscape = 1,
+	showAlert = 1,
+}
+
 StaticPopupDialogs["SAVED_VARIABLES_TOO_LARGE"] = {
 	text = SAVED_VARIABLES_TOO_LARGE,
 	button1 = OKAY,
@@ -3613,14 +3701,6 @@ StaticPopupDialogs["CONFIRM_UNLOCK_TRIAL_CHARACTER"] = {
 	OnCancel = function()
 		ClassTrialThanksForPlayingDialog:ShowThanks();
 	end,
-	timeout = 0,
-	whileDead = 1,
-}
-
-StaticPopupDialogs["QUEST_IGNORE_TUTORIAL"] = {
-	text = IGNORE_QUEST_TUTORIAL,
-	button1 = OKAY,
-	hideOnEscape = 1,
 	timeout = 0,
 	whileDead = 1,
 }
@@ -3870,6 +3950,8 @@ function StaticPopup_Show(which, text_arg1, text_arg2, data, insertedFrame)
 		info.timeout = text_arg2;
 	else
 		text:SetFormattedText(info.text, text_arg1, text_arg2);
+		text.text_arg1 = text_arg1;
+		text.text_arg2 = text_arg2;
 	end
 
 	-- Show or hide the close button
@@ -3981,6 +4063,7 @@ function StaticPopup_Show(which, text_arg1, text_arg2, data, insertedFrame)
 			tempButtonLocs[i]:SetText(info["button"..i]);
 			tempButtonLocs[i]:Hide();
 			tempButtonLocs[i]:ClearAllPoints();
+			tempButtonLocs[i].PulseAnim:Stop();
 			--Now we possibly remove it.
 			if ( not (info["button"..i] and ( not info["DisplayButton"..i] or info["DisplayButton"..i](dialog))) ) then
 				tremove(tempButtonLocs, i);
@@ -4009,6 +4092,9 @@ function StaticPopup_Show(which, text_arg1, text_arg2, data, insertedFrame)
 				tempButtonLocs[i]:SetWidth(width + 20);
 			else
 				tempButtonLocs[i]:SetWidth(120);
+			end
+			if (info["button"..i.."Pulse"]) then
+				tempButtonLocs[i].PulseAnim:Play();
 			end
 			tempButtonLocs[i]:Enable();
 			tempButtonLocs[i]:Show();
@@ -4254,6 +4340,31 @@ function StaticPopup_OnHide(self)
 		_G[self:GetName().."MoneyFrame"]:SetPoint("TOP", text, "BOTTOM", 0, -5);
 		_G[self:GetName().."MoneyInputFrame"]:SetPoint("TOP", text, "BOTTOM", 0, -5);
 	end
+end
+
+local function StaticPopup_CallInfoHandler(dialog, handlerName, ...)
+	if ( dialog:IsShown() ) then
+		local which = dialog.which;
+		local info = StaticPopupDialogs[which];
+		if ( info ) then
+			local handler = info[handlerName];
+			if ( handler ) then
+				handler(dialog, ...);
+			end
+		end
+	end
+end
+
+function StaticPopup_OnHyperlinkClick(self, ...)
+	StaticPopup_CallInfoHandler(self, "OnHyperlinkClick", ...);
+end
+
+function StaticPopup_OnHyperlinkEnter(self, ...)
+	StaticPopup_CallInfoHandler(self, "OnHyperlinkEnter", ...);
+end
+
+function StaticPopup_OnHyperlinkLeave(self, ...)
+	StaticPopup_CallInfoHandler(self, "OnHyperlinkLeave", ...);
 end
 
 function StaticPopup_OnClick(dialog, index)

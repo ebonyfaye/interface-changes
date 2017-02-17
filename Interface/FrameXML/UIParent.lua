@@ -155,7 +155,12 @@ WORLD_QUEST_QUALITY_COLORS = {
 	[LE_WORLD_QUEST_QUALITY_EPIC] = ITEM_QUALITY_COLORS[LE_ITEM_QUALITY_EPIC];
 };
 
+-- Protecting from addons since we use this in GetScaledCursorDelta which is used in secure code.
+local _UIParentGetEffectiveScale;
+local _UIParentRef;
 function UIParent_OnLoad(self)
+	_UIParentGetEffectiveScale = self.GetEffectiveScale;
+	_UIParentRef = self;
 	self:RegisterEvent("PLAYER_LOGIN");
 	self:RegisterEvent("PLAYER_DEAD");
 	self:RegisterEvent("SELF_RES_SPELL_CHANGED");
@@ -266,6 +271,7 @@ function UIParent_OnLoad(self)
 
 	-- Events for Artifact UI
 	self:RegisterEvent("ARTIFACT_UPDATE");
+	self:RegisterEvent("ARTIFACT_TIER_CHANGED");
 	self:RegisterEvent("ARTIFACT_RESPEC_PROMPT");
 
 	-- Events for Adventure Map UI
@@ -313,6 +319,10 @@ function UIParent_OnLoad(self)
 	-- Events for void storage
 	self:RegisterEvent("VOID_STORAGE_OPEN");
 	self:RegisterEvent("VOID_STORAGE_CLOSE");
+
+	-- Events for contributions
+	self:RegisterEvent("CONTRIBUTION_COLLECTOR_OPEN");
+	self:RegisterEvent("CONTRIBUTION_COLLECTOR_CLOSE");
 
 	-- Events for Trial caps
 	self:RegisterEvent("TRIAL_CAP_REACHED_MONEY");
@@ -380,6 +390,9 @@ function UIParent_OnLoad(self)
 
 	-- Invite confirmations
 	self:RegisterEvent("GROUP_INVITE_CONFIRMATION");
+	
+	-- Event(s) for the ArtifactUI
+	self:RegisterEvent("ARTIFACT_ENDGAME_REFUND");
 end
 
 function UIParent_OnShow(self)
@@ -579,6 +592,10 @@ end
 
 function FlightMap_LoadUI()
 	UIParentLoadAddOn("Blizzard_FlightMap");
+end
+
+function APIDocumentation_LoadUI()
+	UIParentLoadAddOn("Blizzard_APIDocumentation");
 end
 
 --[[
@@ -997,7 +1014,7 @@ function UIParent_OnEvent(self, event, ...)
 			GMChatFrame:Show()
 			local info = ChatTypeInfo["WHISPER"];
 			GMChatFrame:AddMessage(format(GM_CHAT_LAST_SESSION, "|TInterface\\ChatFrame\\UI-ChatIcon-Blizz:12:20:0:0:32:16:4:28:0:16|t "..
-			"|HplayerGM:"..lastTalkedToGM.."|h".."["..lastTalkedToGM.."]".."|h"), info.r, info.g, info.b, info.id);
+				GetGMLink(lastTalkedToGM, "["..lastTalkedToGM.."]")), info.r, info.g, info.b, info.id);
 			GMChatFrameEditBox:SetAttribute("tellTarget", lastTalkedToGM);
 			GMChatFrameEditBox:SetAttribute("chatType", "WHISPER");
 		end
@@ -1496,7 +1513,10 @@ function UIParent_OnEvent(self, event, ...)
 	elseif ( event == "ARTIFACT_UPDATE" ) then
 		ArtifactFrame_LoadUI();
 		ShowUIPanel(ArtifactFrame);
-
+	elseif ( event == "ARTIFACT_TIER_CHANGED" ) then
+		local newTier, bagOrInventorySlot, slot = ...;
+		ArtifactFrame_LoadUI();
+		ArtifactFrame:OnTierChanged(newTier, bagOrInventorySlot, slot);
 	elseif ( event == "ARTIFACT_RESPEC_PROMPT" ) then
 		ArtifactFrame_LoadUI();
 		ShowUIPanel(ArtifactFrame);
@@ -1507,6 +1527,11 @@ function UIParent_OnEvent(self, event, ...)
 			StaticPopup_Show("CONFIRM_ARTIFACT_RESPEC", BreakUpLargeNumbers(C_ArtifactUI.GetRespecCost()));
 		end
 
+	elseif ( event == "ARTIFACT_ENDGAME_REFUND" ) then
+		local numRefunded, refundedTier, bagOrInventorySlot = ...;
+		ArtifactFrame_LoadUI();
+		ArtifactFrame:OnTraitsRefunded(numRefunded, refundedTier);
+		
 	elseif ( event == "ADVENTURE_MAP_OPEN" ) then
 		OrderHall_LoadUI();
 		ShowUIPanel(OrderHallMissionFrame);
@@ -1744,7 +1769,6 @@ function UIParent_OnEvent(self, event, ...)
 		end
 	elseif ( event == "LUA_WARNING" ) then
 		local warnType, message = ...;
-		debuginfo();
 		LoadAddOn("Blizzard_DebugTools");
 		local loaded = IsAddOnLoaded("Blizzard_DebugTools");
 
@@ -1865,6 +1889,13 @@ function UIParent_OnEvent(self, event, ...)
 		UpdateUIParentRelativeToDebugMenu();
 	elseif ( event == "GROUP_INVITE_CONFIRMATION" ) then
 		UpdateInviteConfirmationDialogs();
+	elseif ( event == "CONTRIBUTION_COLLECTOR_OPEN" ) then
+		UIParentLoadAddOn("Blizzard_Contribution");
+		ContributionCollectionUI_Show();
+	elseif (event == "CONTRIBUTION_COLLECTOR_CLOSE" ) then
+		if ( ContributionCollectionUI_Hide ) then
+			ContributionCollectionUI_Hide();
+		end
 	end
 end
 
@@ -3613,7 +3644,7 @@ function GetScaledCursorPosition()
 end
 
 function GetScaledCursorDelta()
-	local uiScale = UIParent:GetEffectiveScale();
+	local uiScale = _UIParentGetEffectiveScale(_UIParentRef);
 	local x, y = GetCursorDelta();
 	return x / uiScale, y / uiScale;
 end
@@ -3923,33 +3954,45 @@ function UpdateInviteConfirmationDialogs()
 		local suggesterGuid, suggesterName, relationship, isQuickJoin = GetInviteReferralInfo(firstInvite);
 
 		--If we ourselves have a relationship with this player, we'll just act as if they asked through us.
-		local _, color, selfRelationship = SocialQueueUtil_GetNameAndColor(guid);
+		local _, color, selfRelationship, playerLink = SocialQueueUtil_GetNameAndColor(guid, name);
+		local safeLink = playerLink and "["..playerLink.."]" or name;
+
+		if ( isQuickJoin and selfRelationship and GetCVarBool("autoAcceptQuickJoinRequests") ) then
+			RespondToInviteConfirmation(firstInvite, true);
+			return;
+		end
+
 		if ( selfRelationship ) then
 			if ( isQuickJoin ) then
-				text = text..string.format(INVITE_CONFIRMATION_REQUEST_QUICKJOIN, color..name..FONT_COLOR_CODE_CLOSE);
+				text = text..INVITE_CONFIRMATION_REQUEST_QUICKJOIN:format(color..safeLink..FONT_COLOR_CODE_CLOSE);
 			else
-				text = text..string.format(INVITE_CONFIRMATION_REQUEST, color..name..FONT_COLOR_CODE_CLOSE);
+				text = text..INVITE_CONFIRMATION_REQUEST:format(color..name..FONT_COLOR_CODE_CLOSE);
 			end
 		elseif ( suggesterGuid ) then
 			suggesterName = GetSocialColoredName(suggesterName, suggesterGuid);
+
 			if ( relationship == LE_INVITE_CONFIRMATION_RELATION_FRIEND ) then
 				if ( isQuickJoin ) then
-					text = text..string.format(INVITE_CONFIRMATION_REQUEST_FRIEND_QUICKJOIN, suggesterName, name);
+					text = text..INVITE_CONFIRMATION_REQUEST_FRIEND_QUICKJOIN:format(suggesterName, color..safeLink..FONT_COLOR_CODE_CLOSE);
 				else
-					text = text..string.format(INVITE_CONFIRMATION_REQUEST_FRIEND, suggesterName, name);
+					text = text..INVITE_CONFIRMATION_REQUEST_FRIEND:format(suggesterName, name);
 				end
 			elseif ( relationship == LE_INVITE_CONFIRMATION_RELATION_GUILD ) then
 				if ( isQuickJoin ) then
-					text = text..string.format(INVITE_CONFIRMATION_REQUEST_GUILD_QUICKJOIN, suggesterName, name);
+					text = text..string.format(INVITE_CONFIRMATION_REQUEST_GUILD_QUICKJOIN, suggesterName, color..safeLink..FONT_COLOR_CODE_CLOSE);
 				else
 					text = text..string.format(INVITE_CONFIRMATION_REQUEST_GUILD, suggesterName, name);
 				end
 			else
-				text = text..string.format(INVITE_CONFIRMATION_REQUEST, name);
+				if ( isQuickJoin ) then
+					text = text..string.format(INVITE_CONFIRMATION_REQUEST, color..safeLink..FONT_COLOR_CODE_CLOSE);
+				else
+					text = text..string.format(INVITE_CONFIRMATION_REQUEST, name);
+				end
 			end
 		else
 			if ( isQuickJoin ) then
-				text = text..string.format(INVITE_CONFIRMATION_REQUEST_QUICKJOIN, name);
+				text = text..string.format(INVITE_CONFIRMATION_REQUEST_QUICKJOIN, color..safeLink..FONT_COLOR_CODE_CLOSE);
 			else
 				text = text..string.format(INVITE_CONFIRMATION_REQUEST, name);
 			end
@@ -3963,7 +4006,7 @@ function UpdateInviteConfirmationDialogs()
 		text = text..string.format(INVITE_CONFIRMATION_SUGGEST, suggesterName, name);
 	end
 
-	local invalidQueues = GetInviteConfirmationInvalidQueues(firstInvite);
+	local invalidQueues = C_PartyInfo.GetInviteConfirmationInvalidQueues(firstInvite);
 	if ( invalidQueues and #invalidQueues > 0 ) then
 		if ( text ~= "" ) then
 			text = text.."\n\n"
@@ -4637,6 +4680,10 @@ function ConfirmOrLeaveBattlefield()
 	end
 end
 
+function ConfirmSurrenderArena()
+	StaticPopup_Show("CONFIRM_SURRENDER_ARENA");
+end
+
 function GetCurrentScenarioType()
 	local scenarioType = select(10, C_Scenario.GetInfo());
 	return scenarioType;
@@ -4781,4 +4828,20 @@ function GetDisplayedInviteType(guid)
 end
 
 function nop()
+end
+
+function ShakeFrameRandom(frame, magnitude, duration, frequency)
+	local point, relativeFrame, relativePoint, x, y = frame:GetPoint();
+	local shakeTime = 0;
+	local lastTime = GetTime();
+	frame.shakeTicker = C_Timer.NewTicker(frequency, function()
+		frame:SetPoint(point, relativeFrame, relativePoint, x + math.random(-magnitude, magnitude), y + math.random(-magnitude, magnitude));
+		local newTime = GetTime();
+		shakeTime = shakeTime + (newTime - lastTime);
+		lastTime = newTime;
+		if shakeTime > duration then
+			frame:SetPoint(point, relativeFrame, relativePoint, x, y);
+			frame.shakeTicker:Cancel();
+		end
+	end);
 end

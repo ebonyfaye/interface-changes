@@ -124,6 +124,7 @@ function MerchantFrame_UpdateMerchantInfo()
 		local merchantAltCurrency = _G["MerchantItem"..i.."AltCurrencyFrame"];
 		if ( index <= numMerchantItems ) then
 			name, texture, price, stackCount, numAvailable, isUsable, extendedCost = GetMerchantItemInfo(index);
+			local canAfford = CanAffordMerchantItem(index);
 			_G["MerchantItem"..i.."Name"]:SetText(name);
 			SetItemButtonCount(itemButton, stackCount);
 			SetItemButtonStock(itemButton, numAvailable);
@@ -135,7 +136,7 @@ function MerchantFrame_UpdateMerchantInfo()
 				itemButton.name = name;
 				itemButton.link = GetMerchantItemLink(index);
 				itemButton.texture = texture;
-				MerchantFrame_UpdateAltCurrency(index, i);
+				MerchantFrame_UpdateAltCurrency(index, i, canAfford);
 				merchantAltCurrency:ClearAllPoints();
 				merchantAltCurrency:SetPoint("BOTTOMLEFT", "MerchantItem"..i.."NameFrame", "BOTTOMLEFT", 0, 31);
 				merchantMoney:Hide();
@@ -146,9 +147,14 @@ function MerchantFrame_UpdateMerchantInfo()
 				itemButton.name = name;
 				itemButton.link = GetMerchantItemLink(index);
 				itemButton.texture = texture;
-				local altCurrencyWidth = MerchantFrame_UpdateAltCurrency(index, i);
+				local altCurrencyWidth = MerchantFrame_UpdateAltCurrency(index, i, canAfford);
 				MoneyFrame_SetMaxDisplayWidth(merchantMoney, MAX_MONEY_DISPLAY_WIDTH - altCurrencyWidth);
 				MoneyFrame_Update(merchantMoney:GetName(), price);
+				local color;
+				if (canAfford == false) then
+					color = "gray";
+				end
+				SetMoneyFrameColor(merchantMoney:GetName(), color);
 				merchantAltCurrency:ClearAllPoints();
 				merchantAltCurrency:SetPoint("LEFT", merchantMoney:GetName(), "RIGHT", -14, 0);
 				merchantAltCurrency:Show();
@@ -161,11 +167,18 @@ function MerchantFrame_UpdateMerchantInfo()
 				itemButton.texture = texture;
 				MoneyFrame_SetMaxDisplayWidth(merchantMoney, MAX_MONEY_DISPLAY_WIDTH);
 				MoneyFrame_Update(merchantMoney:GetName(), price);
+				local color;
+				if (canAfford == false) then
+					color = "gray";
+				end
+				SetMoneyFrameColor(merchantMoney:GetName(), color);
 				merchantAltCurrency:Hide();
 				merchantMoney:Show();
 			end
 
 			local merchantItemID = GetMerchantItemID(index);
+
+			SetItemButtonQuality(itemButton, select(3, GetItemInfo(merchantItemID)), merchantItemID);
 
 			local isHeirloom = merchantItemID and C_Heirloom.IsItemHeirloom(merchantItemID);
 			local isKnownHeirloom = isHeirloom and C_Heirloom.PlayerHasHeirloom(merchantItemID);
@@ -281,7 +294,7 @@ function MerchantFrame_UpdateMerchantInfo()
 	MerchantItem9:SetPoint("TOPLEFT", "MerchantItem7", "BOTTOMLEFT", 0, -8);
 end
 
-function MerchantFrame_UpdateAltCurrency(index, indexOnPage)
+function MerchantFrame_UpdateAltCurrency(index, indexOnPage, canAfford)
 	local itemCount = GetMerchantItemCostInfo(index);
 	local frameName = "MerchantItem"..indexOnPage.."AltCurrencyFrame";
 	local usedCurrencies = 0;
@@ -297,7 +310,7 @@ function MerchantFrame_UpdateAltCurrency(index, indexOnPage)
 				button.index = index;
 				button.item = i;
 				button.itemLink = itemLink;
-				AltCurrencyFrame_Update(frameName.."Item"..usedCurrencies, itemTexture, itemValue);
+				AltCurrencyFrame_Update(frameName.."Item"..usedCurrencies, itemTexture, itemValue, canAfford);
 				width = width + button:GetWidth();
 				if ( usedCurrencies > 1 ) then
 					-- button spacing;
@@ -488,12 +501,6 @@ function MerchantItemButton_OnModifiedClick(self, button)
 			local maxStack = GetMerchantItemMaxStack(self:GetID());
 			local _, _, price, stackCount, _, _, extendedCost = GetMerchantItemInfo(self:GetID());
 			
-			-- TODO: Support shift-click for stacks of extended cost items
-			if (stackCount > 1 and extendedCost) then
-				MerchantItemButton_OnClick(self, button);
-				return;
-			end
-			
 			local canAfford;
 			if (price and price > 0) then
 				canAfford = floor(GetMoney() / (price / stackCount));
@@ -501,9 +508,20 @@ function MerchantItemButton_OnModifiedClick(self, button)
 				canAfford = maxStack;
 			end
 			
+			if (extendedCost) then
+				local itemCount = GetMerchantItemCostInfo(self:GetID());
+				for i = 1, MAX_ITEM_COST do
+					local itemTexture, itemValue, itemLink = GetMerchantItemCostItem(self:GetID(), i);
+					if (itemLink) then
+						local myCount = GetItemCount(itemLink, false, false, true);
+						canAfford = min(canAfford, floor(myCount / (itemValue / stackCount)));
+					end
+				end
+			end
+
 			if ( maxStack > 1 ) then
 				local maxPurchasable = min(maxStack, canAfford);
-				OpenStackSplitFrame(maxPurchasable, self, "BOTTOMLEFT", "TOPLEFT");
+				OpenStackSplitFrame(maxPurchasable, self, "BOTTOMLEFT", "TOPLEFT", stackCount);
 			end
 			return;
 		end

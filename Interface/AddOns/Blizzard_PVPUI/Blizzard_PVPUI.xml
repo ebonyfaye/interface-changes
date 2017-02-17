@@ -94,6 +94,21 @@
 			</Anchors>
 			<TexCoords left="0.00195313" right="0.63867188" top="0.70703125" bottom="0.76757813"/>
 		</HighlightTexture>
+		<Scripts>
+			<OnEnter>
+				if (self.name) then
+					GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+					GameTooltip:SetText(self.name, HIGHLIGHT_FONT_COLOR:GetRGB());
+					if (self.longDescription) then
+						GameTooltip:AddLine(self.longDescription);
+					end
+					GameTooltip:Show();
+				end
+			</OnEnter>
+			<OnLeave>
+				GameTooltip:Hide();
+			</OnLeave>
+		</Scripts>
 	</Button>
 
 	<Button name="PVPWarGameButtonTemplate" virtual="true">
@@ -106,8 +121,8 @@
 			</Button>
 			<Button parentKey="Entry" hidden="true" inherits="PVPInstanceListEntryButtonTemplate">
 				<Scripts>
-					<OnEnter function="WarGameButton_OnEnter"/>
-					<OnLeave function="WarGameButton_OnLeave"/>
+					<OnEnter function="WarGameButton_OnEnter" inherit="prepend"/>
+					<OnLeave function="WarGameButton_OnLeave" inherit="prepend"/>
 					<OnClick function="WarGameButton_OnClick"/>
 				</Scripts>
 			</Button>
@@ -164,12 +179,17 @@
 						<KeyValue key="layoutIndex" value="2" type="number"/>
 					</KeyValues>
 				</FontString>
+				<FontString parentKey="XP" inherits="GameFontHighlight">
+					<KeyValues>
+						<KeyValue key="layoutIndex" value="3" type="number"/>
+					</KeyValues>
+				</FontString>
 			</Layer>
 		</Layers>
 		<Frames>
 			<Frame parentKey="ItemTooltip" inherits="EmbeddedItemTooltip">
 				<KeyValues>
-					<KeyValue key="layoutIndex" value="3" type="number"/>
+					<KeyValue key="layoutIndex" value="4" type="number"/>
 					<KeyValue key="topPadding" value="15" type="number"/>
 					<KeyValue key="bottomPadding" value="6" type="number"/>
 				</KeyValues>
@@ -275,6 +295,8 @@
 			<OnMouseUp>
 				self.Contents:SetPoint("TOPLEFT", 0, 0);
 			</OnMouseUp>
+			<OnEnter function="PVPBonusButtonTemplate_OnEnter"/>
+			<OnLeave function="GameTooltip_Hide"/>
 		</Scripts>
 	</Button>
 	<Button name="PVPBonusBattlegroundButtonTemplate" virtual="true" inherits="PVPBonusButtonTemplate">
@@ -825,7 +847,7 @@
 									</Frame>
 									<Button parentKey="RandomBGButton" inherits="PVPBonusBattlegroundButtonTemplate">
 										<Anchors>
-											<Anchor point="TOP" x="0" y="-126"/>
+											<Anchor point="TOP" x="0" y="-107"/>
 										</Anchors>
 										<Frames>
 											<Frame parentKey="Contents" inherits="PVPBonusBattlegroundContentsTemplate">
@@ -853,17 +875,96 @@
 												</Layers>
 											</Frame>
 										</Frames>
+										<KeyValues>
+											<KeyValue key="tooltipTableKey" value="RandomBG" type="string"/>
+										</KeyValues>
 									</Button>
 									<Button parentKey="Arena1Button" inherits="PVPBonusWorldPVPButtonTemplate">
 										<Anchors>
-											<Anchor point="TOP" relativeKey="$parent.RandomBGButton" relativePoint="BOTTOM" x="0" y="-9"/>
+											<Anchor point="TOP" relativeKey="$parent.RandomBGButton" relativePoint="BOTTOM" x="0" y="-1"/>
 										</Anchors>
+										<KeyValues>
+											<KeyValue key="canQueue" value="true" type="boolean"/>
+											<KeyValue key="arenaID" value="4" type="number"/>
+											<KeyValue key="tooltipTableKey" value="Skirmish" type="string"/>
+										</KeyValues>
 									</Button>
 									<Button parentKey="AshranButton" inherits="PVPBonusWorldPVPButtonTemplate">
 										<Anchors>
-											<Anchor point="TOP" relativeKey="$parent.Arena1Button" relativePoint="BOTTOM" x="0" y="-9"/>
+											<Anchor point="TOP" relativeKey="$parent.Arena1Button" relativePoint="BOTTOM" x="0" y="-1"/>
 										</Anchors>
+										<KeyValues>
+											<KeyValue key="queueID" value="ASHRAN_QUEUE_ID" type="global"/>
+											<KeyValue key="tooltipTableKey" value="Ashran" type="string"/>
+										</KeyValues>
 									</Button>
+									<Button parentKey="BrawlButton" inherits="PVPBonusWorldPVPButtonTemplate">
+										<Anchors>
+											<Anchor point="TOP" relativeKey="$parent.AshranButton" relativePoint="BOTTOM" x="0" y="-1"/>
+										</Anchors>
+										<KeyValues>
+											<KeyValue key="isBrawl" value="true" type="boolean"/>
+											<KeyValue key="tooltipTableKey" value="Brawl" type="string"/>
+										</KeyValues>
+										<Scripts>
+											<OnClick inherit="prepend">
+												if (self:GetParent().BrawlHelpBox:IsShown()) then
+													self:GetParent().BrawlHelpBox:Hide();
+													SetCVarBitfield("closedInfoFrames",	LE_FRAME_TUTORIAL_BRAWL, true);
+												end
+											</OnClick>
+										</Scripts>
+									</Button>
+									<Frame parentKey="BrawlHelpBox" inherits="GlowBoxTemplate" hidden="false" frameStrata="DIALOG" >
+										<Size x="230" y="65"/>
+										<Anchors>
+											<Anchor point="LEFT" relativePoint="RIGHT" relativeKey="$parent.BrawlButton" x="15" y="0"/>
+										</Anchors>
+										<Layers>
+											<Layer level="ARTWORK">
+												<FontString parentKey="BigText" inherits="GameFontHighlight" text="BRAWL_TUTORIAL" justifyH="LEFT">
+													<Size x="186" y="0"/>
+													<Anchors>
+														<Anchor point="TOP" x="-10" y="-12"/>
+													</Anchors>
+												</FontString>
+												<Texture parentKey="ArrowLeft" inherits="HelpPlateArrowDOWN">
+													<Size x="53" y="21"/>
+													<Anchors>
+														<Anchor point="RIGHT" relativePoint="LEFT" x="1" y="0"/>
+													</Anchors>
+												</Texture>
+											</Layer>
+											<Layer level="BORDER">
+												<Texture parentKey="ArrowGlowLeft" inherits="HelpPlateArrow-GlowDOWN" alphaMode="ADD" alpha="0.5">
+													<Size x="53" y="21"/>
+													<Anchors>
+														<Anchor point="RIGHT" relativePoint="LEFT" x="-1" y="0"/>
+													</Anchors>
+												</Texture>
+											</Layer>
+										</Layers>
+										<Frames>
+											<Button parentKey="CloseButton" inherits="UIPanelCloseButton">
+												<Anchors>
+													<Anchor point="TOPRIGHT" x="6" y="6"/>
+												</Anchors>
+												<Scripts>
+													<OnClick>
+														self:GetParent():Hide();
+														SetCVarBitfield("closedInfoFrames",	LE_FRAME_TUTORIAL_BRAWL, true);
+													</OnClick>
+												</Scripts>
+											</Button>
+										</Frames>
+										<Scripts>
+											<OnLoad>
+												self:SetHeight(self.BigText:GetHeight() + HELPTIP_HEIGHT_PADDING);
+												SetClampedTextureRotation(self.ArrowLeft, 90);
+												SetClampedTextureRotation(self.ArrowGlowLeft, 90);
+											</OnLoad>
+										</Scripts>
+									</Frame>
 									<Frame parentKey="ShadowOverlay" inherits="ShadowOverlaySmallTemplate" useParentLevel="true">
 										<Anchors>
 											<Anchor point="TOPLEFT" relativeKey="$parent.WorldBattlesTexture" relativePoint="TOPLEFT" x="0" y="0"/>
@@ -873,6 +974,8 @@
 								</Frames>
 								<Scripts>
 									<OnShow function="HonorFrameBonusFrame_OnShow"/>
+									<OnHide function="HonorFrameBonusFrame_OnHide"/>
+									<OnEvent function="HonorFrameBonusFrame_OnEvent"/>
 								</Scripts>
 							</Frame>
 							<Button name="$parentQueueButton" parentKey="QueueButton" inherits="MagicButtonTemplate" text="BATTLEFIELD_JOIN" motionScriptsWhileDisabled="true">

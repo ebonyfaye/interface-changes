@@ -141,7 +141,7 @@ function MainMenuBar_UpdateExperienceBars(newLevel)
 	if ( not newLevel ) then
 		newLevel = UnitLevel("player");
 	end
-	local artifactItemID, _, _, _, artifactTotalXP, artifactPointsSpent, _, _, _, _, _, _, artifactMaxed = C_ArtifactUI.GetEquippedArtifactInfo();
+	local artifactItemID, _, _, _, artifactTotalXP, artifactPointsSpent, _, _, _, _, _, _, artifactMaxed, _ = C_ArtifactUI.GetEquippedArtifactInfo();
 	local showArtifact = artifactItemID and not artifactMaxed and (UnitLevel("player") >= MAX_PLAYER_LEVEL or GetCVarBool("showArtifactXPBar"));
 	local showXP = newLevel < MAX_PLAYER_LEVEL and not IsXPUserDisabled();
 	local showHonor = newLevel >= MAX_PLAYER_LEVEL and (IsWatchingHonorAsXP() or InActiveBattlefield() or IsInActiveWorldPVP());
@@ -239,7 +239,7 @@ function MainMenuBar_UpdateExperienceBars(newLevel)
 			ReputationWatchBar.StatusBar:Reset();
 		end
 
-		local isCappedFriendship;
+		local isCapped;
 		-- do something different for friendships
 		local level;
 		if ( ReputationWatchBar.friendshipID ) then
@@ -250,11 +250,17 @@ function MainMenuBar_UpdateExperienceBars(newLevel)
 			else
 				-- max rank, make it look like a full bar
 				min, max, value = 0, 1, 1;
-				isCappedFriendship = true;
+				isCapped = true;
 			end
 			colorIndex = 5;		-- always color friendships green
+		elseif (C_Reputation.IsFactionParagon(factionID)) then
+			local currentValue, threshold = C_Reputation.GetFactionParagonInfo(factionID);
+			min, max, value = 0, threshold, currentValue;
 		else
 			level = reaction;
+			if (reaction == MAX_REPUTATION_REACTION) then
+				isCapped = true;
+			end
 		end
 
 		-- See if it was already shown or not
@@ -268,7 +274,7 @@ function MainMenuBar_UpdateExperienceBars(newLevel)
 		min = 0;
 		local statusBar = ReputationWatchBar.StatusBar;
 		statusBar:SetAnimatedValues(value, min, max, level);
-		if ( isCappedFriendship ) then
+		if ( isCapped ) then
 			ReputationWatchBar.OverlayFrame.Text:SetText(name);
 		else
 			ReputationWatchBar.OverlayFrame.Text:SetText(name.." "..value.." / "..max);
