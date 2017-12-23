@@ -52,10 +52,28 @@ local PvpInfoLua =
 		{
 			Name = "GetBrawlInfo",
 			Type = "Function",
+			Documentation = { "If nil is returned, PVP_BRAWL_INFO_UPDATED event will be sent when the data is ready." },
 
 			Returns =
 			{
-				{ Name = "brawlInfo", Type = "PvpBrawlInfo", Nilable = false },
+				{ Name = "brawlInfo", Type = "PvpBrawlInfo", Nilable = true },
+			},
+		},
+		{
+			Name = "GetBrawlRewards",
+			Type = "Function",
+
+			Arguments =
+			{
+				{ Name = "brawlType", Type = "BrawlType", Nilable = false },
+			},
+
+			Returns =
+			{
+				{ Name = "honor", Type = "number", Nilable = false },
+				{ Name = "experience", Type = "number", Nilable = false },
+				{ Name = "rewards", Type = "table", InnerType = "BattlefieldReward", Nilable = true },
+				{ Name = "hasWon", Type = "bool", Nilable = false },
 			},
 		},
 		{
@@ -118,6 +136,16 @@ local PvpInfoLua =
 			},
 		},
 		{
+			Name = "IsBattlegroundEnlistmentBonusActive",
+			Type = "Function",
+
+			Returns =
+			{
+				{ Name = "battlegroundActive", Type = "bool", Nilable = false },
+				{ Name = "brawlActive", Type = "bool", Nilable = false },
+			},
+		},
+		{
 			Name = "IsInBrawl",
 			Type = "Function",
 
@@ -131,10 +159,6 @@ local PvpInfoLua =
 			Type = "Function",
 		},
 		{
-			Name = "RequestBrawlInfo",
-			Type = "Function",
-		},
-		{
 			Name = "RequestCrowdControlSpell",
 			Type = "Function",
 
@@ -145,8 +169,26 @@ local PvpInfoLua =
 		},
 	},
 
+	Events =
+	{
+	},
+
 	Tables =
 	{
+		{
+			Name = "BrawlType",
+			Type = "Enumeration",
+			NumValues = 4,
+			MinValue = 0,
+			MaxValue = 3,
+			Fields =
+			{
+				{ Name = "None", Type = "BrawlType", EnumValue = 0 },
+				{ Name = "Battleground", Type = "BrawlType", EnumValue = 1 },
+				{ Name = "Arena", Type = "BrawlType", EnumValue = 2 },
+				{ Name = "Lfg", Type = "BrawlType", EnumValue = 3 },
+			},
+		},
 		{
 			Name = "BattlefieldReward",
 			Type = "Structure",
@@ -182,6 +224,8 @@ local PvpInfoLua =
 				{ Name = "longDescription", Type = "string", Nilable = false },
 				{ Name = "active", Type = "bool", Nilable = false },
 				{ Name = "timeLeftUntilNextChange", Type = "number", Nilable = false },
+				{ Name = "lfgDungeonID", Type = "number", Nilable = false },
+				{ Name = "brawlType", Type = "BrawlType", Nilable = false },
 				{ Name = "mapNames", Type = "table", InnerType = "string", Nilable = false },
 			},
 		},

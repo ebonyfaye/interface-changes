@@ -161,6 +161,7 @@ function ReputationFrame_Update(showLFGPulse)
 				paragonFrame.factionID = factionID;
 				paragonFrame:SetPoint("RIGHT", factionRow, 11, 0);
 				local currentValue, threshold, rewardQuestID, hasRewardPending = C_Reputation.GetFactionParagonInfo(factionID);
+				C_Reputation.RequestFactionParagonPreloadRewardData(factionID);
 				paragonFrame.Glow:SetShown(hasRewardPending);
 				paragonFrame.Check:SetShown(hasRewardPending);
 				paragonFrame:Show();
@@ -198,7 +199,7 @@ function ReputationFrame_Update(showLFGPulse)
 			if ( isCapped ) then
 				factionRow.rolloverText = nil;
 			else
-				factionRow.rolloverText = HIGHLIGHT_FONT_COLOR_CODE.." "..format(REPUTATION_PROGRESS_FORMAT, barValue, barMax)..FONT_COLOR_CODE_CLOSE;
+				factionRow.rolloverText = HIGHLIGHT_FONT_COLOR_CODE.." "..format(REPUTATION_PROGRESS_FORMAT, BreakUpLargeNumbers(barValue), BreakUpLargeNumbers(barMax))..FONT_COLOR_CODE_CLOSE;
 			end
 			factionBar:SetFillStyle("STANDARD_NO_RANGE_FILL");
 			factionBar:SetMinMaxValues(0, barMax);
@@ -287,11 +288,11 @@ end
 
 function ReputationBar_OnClick(self)
 	if ( ReputationDetailFrame:IsShown() and (GetSelectedFaction() == self.index) ) then
-		PlaySound("igCharacterInfoClose");
+		PlaySound(SOUNDKIT.IG_CHARACTER_INFO_CLOSE);
 		ReputationDetailFrame:Hide();
 	else
 		if ( self.hasRep ) then
-			PlaySound("igCharacterInfoOpen");
+			PlaySound(SOUNDKIT.IG_CHARACTER_INFO_OPEN);
 			SetSelectedFaction(self.index);
 			ReputationDetailFrame:Show();
 			ReputationFrame_Update();
@@ -300,7 +301,7 @@ function ReputationBar_OnClick(self)
 end
 
 function ReputationBarLFGBonusRepButton_OnClick(self)
-	PlaySound("igMainMenuOptionCheckBoxOn");
+	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 	ReputationBar_SetLFBonus(self.factionID);
 end
 
@@ -369,7 +370,7 @@ function ReputationParagonFrame_SetupParagonTooltip(frame, factionID)
 	local description = PARAGON_REPUTATION_TOOLTIP_TEXT:format(factionName);
 	if ( hasRewardPending ) then
 		local questIndex = GetQuestLogIndexByID(rewardQuestID);
-		local _, text = GetQuestLogQuestText(questIndex);
+		local text = GetQuestLogCompletionText(questIndex);
 		if ( text and text ~= "" ) then
 			description = text;
 		end

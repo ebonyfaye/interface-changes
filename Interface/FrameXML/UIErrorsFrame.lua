@@ -14,10 +14,10 @@ function UIErrorsMixin:OnEvent(event, ...)
 		self:AddMessage(message, r, g, b, 1.0);
 	elseif event == "UI_INFO_MESSAGE" then
 		local messageType, message = ...;
-		self:TryDisplayMessage(messageType, message, 1.0, 1.0, 0.0);
+		self:TryDisplayMessage(messageType, message, YELLOW_FONT_COLOR:GetRGB());
 	elseif event == "UI_ERROR_MESSAGE" then
 		local messageType, message = ...;
-		self:TryDisplayMessage(messageType, message, 1.0, 0.1, 0.1);
+		self:TryDisplayMessage(messageType, message, RED_FONT_COLOR:GetRGB());
 	end
 end
 
@@ -132,9 +132,9 @@ function UIErrorsMixin:TryDisplayMessage(messageType, message, r, g, b)
 
 		local errorName, soundKitID, voiceID = GetGameMessageInfo(messageType);
 		if voiceID then
-    		PlayVocalErrorSoundID(voiceID);
+			PlayVocalErrorSoundID(voiceID);
 		elseif soundKitID then
-			PlaySoundKitID(soundKitID);
+			PlaySound(soundKitID);
 		end
 	end
 end

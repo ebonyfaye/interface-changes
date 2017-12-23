@@ -214,7 +214,6 @@ local ArtifactUILua =
 				{ Name = "itemAppearanceID", Type = "number", Nilable = true },
 				{ Name = "altItemAppearanceID", Type = "number", Nilable = true },
 				{ Name = "altOnTop", Type = "bool", Nilable = false },
-				{ Name = "artifactMaxed", Type = "bool", Nilable = false },
 				{ Name = "tier", Type = "number", Nilable = false },
 			},
 		},
@@ -267,6 +266,7 @@ local ArtifactUILua =
 			Arguments =
 			{
 				{ Name = "rank", Type = "number", Nilable = false },
+				{ Name = "tier", Type = "number", Nilable = false },
 			},
 
 			Returns =
@@ -301,7 +301,6 @@ local ArtifactUILua =
 				{ Name = "itemAppearanceID", Type = "number", Nilable = true },
 				{ Name = "altItemAppearanceID", Type = "number", Nilable = true },
 				{ Name = "altOnTop", Type = "bool", Nilable = false },
-				{ Name = "artifactMaxed", Type = "bool", Nilable = false },
 				{ Name = "tier", Type = "number", Nilable = false },
 			},
 		},
@@ -317,6 +316,21 @@ local ArtifactUILua =
 			Returns =
 			{
 				{ Name = "numRelicSlots", Type = "number", Nilable = false },
+			},
+		},
+		{
+			Name = "GetEquippedArtifactRelicAttuneInfo",
+			Type = "Function",
+
+			Arguments =
+			{
+				{ Name = "relicSlotIndex", Type = "number", Nilable = false },
+			},
+
+			Returns =
+			{
+				{ Name = "isAttuned", Type = "bool", Nilable = false },
+				{ Name = "canAttune", Type = "bool", Nilable = false },
 			},
 		},
 		{
@@ -525,6 +539,21 @@ local ArtifactUILua =
 			},
 		},
 		{
+			Name = "GetRelicAttuneInfo",
+			Type = "Function",
+
+			Arguments =
+			{
+				{ Name = "relicSlotIndex", Type = "number", Nilable = false },
+			},
+
+			Returns =
+			{
+				{ Name = "isAttuned", Type = "bool", Nilable = false },
+				{ Name = "canAttune", Type = "bool", Nilable = false },
+			},
+		},
+		{
 			Name = "GetRelicInfo",
 			Type = "Function",
 
@@ -573,6 +602,22 @@ local ArtifactUILua =
 			},
 		},
 		{
+			Name = "GetRelicSlotRankInfo",
+			Type = "Function",
+
+			Arguments =
+			{
+				{ Name = "relicSlotIndex", Type = "number", Nilable = false },
+			},
+
+			Returns =
+			{
+				{ Name = "currentRank", Type = "number", Nilable = false },
+				{ Name = "canAddTalent", Type = "bool", Nilable = false },
+				{ Name = "artifactLevelRequiredForNextRank", Type = "number", Nilable = true },
+			},
+		},
+		{
 			Name = "GetRelicSlotType",
 			Type = "Function",
 
@@ -613,7 +658,6 @@ local ArtifactUILua =
 				{ Name = "itemAppearanceID", Type = "number", Nilable = true },
 				{ Name = "altItemAppearanceID", Type = "number", Nilable = true },
 				{ Name = "altOnTop", Type = "bool", Nilable = false },
-				{ Name = "artifactMaxed", Type = "bool", Nilable = false },
 				{ Name = "tier", Type = "number", Nilable = false },
 			},
 		},
@@ -658,6 +702,24 @@ local ArtifactUILua =
 			Returns =
 			{
 				{ Name = "isAtForge", Type = "bool", Nilable = false },
+			},
+		},
+		{
+			Name = "IsEquippedArtifactMaxed",
+			Type = "Function",
+
+			Returns =
+			{
+				{ Name = "artifactMaxed", Type = "bool", Nilable = false },
+			},
+		},
+		{
+			Name = "IsMaxedByRulesOrEffect",
+			Type = "Function",
+
+			Returns =
+			{
+				{ Name = "isEffectivelyMaxed", Type = "bool", Nilable = false },
 			},
 		},
 		{
@@ -726,6 +788,10 @@ local ArtifactUILua =
 				{ Name = "shouldSuppressForgeRotation", Type = "bool", Nilable = false },
 			},
 		},
+	},
+
+	Events =
+	{
 	},
 
 	Tables =

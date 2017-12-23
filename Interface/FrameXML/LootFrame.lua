@@ -189,6 +189,7 @@ function LootFrame_UpdateButton(index)
 			local text = _G["LootButton"..index.."Text"];
 			if ( texture ) then
 				local color = ITEM_QUALITY_COLORS[quality];
+				SetItemButtonQuality(button, quality, GetLootSlotLink(slot));
 				_G["LootButton"..index.."IconTexture"]:SetTexture(texture);
 				text:SetText(item);
 				if( locked ) then
@@ -324,9 +325,9 @@ end
 
 function LootFrame_OnShow(self)
 	if( self.numLootItems == 0 ) then
-		PlaySound("LOOTWINDOWOPENEMPTY");
+		PlaySound(SOUNDKIT.LOOT_WINDOW_OPEN_EMPTY);
 	elseif( IsFishingLoot() ) then
-		PlaySound("FISHING REEL IN");
+		PlaySound(SOUNDKIT.FISHING_REEL_IN);
 		LootFramePortraitOverlay:SetTexture("Interface\\LootFrame\\FishingLoot-Icon");
 	end
 end
@@ -652,12 +653,12 @@ function BonusRollFrame_OnEvent(self, event, ...)
 		self.state = "rolling";
 		self.animFrame = 0;
 		self.animTime = 0;
-		PlaySoundKitID(31579);	--UI_BonusLootRoll_Start
+		PlaySound(SOUNDKIT.UI_BONUS_LOOT_ROLL_START);
 		--Make sure we don't keep playing the sound ad infinitum.
 		if ( self.rollSound ) then
 			StopSound(self.rollSound);
 		end
-		local _, soundHandle = PlaySoundKitID(31580);	--UI_BonusLootRoll_Loop
+		local _, soundHandle = PlaySound(SOUNDKIT.UI_BONUS_LOOT_ROLL_LOOP);
 		self.rollSound = soundHandle;
 		self.RollingFrame.LootSpinner:Show();
 		self.RollingFrame.LootSpinnerFinal:Hide();
@@ -721,7 +722,7 @@ function BonusRollFrame_OnUpdate(self, elapsed)
 				StopSound(self.rollSound);
 			end
 			self.rollSound = nil;
-			PlaySoundKitID(31581);	--UI_BonusLootRoll_End
+			PlaySound(SOUNDKIT.UI_BONUS_LOOT_ROLL_END);
 			self.RollingFrame.LootSpinner:Hide();
 			self.RollingFrame.LootSpinnerFinal:Show();
 			self.RollingFrame.LootSpinnerFinal:SetTexCoord(unpack(finalTextureTexCoords[self.rewardType]));
@@ -747,8 +748,13 @@ function GetBonusRollEncounterJournalLinkDifficulty()
 	return BonusRollFrame.difficultyID;
 end
 
+function EncounterJournalLinkButton_IsLinkDataAvailable()
+	return BonusRollFrame.instanceID and BonusRollFrame.encounterID and GetBonusRollEncounterJournalLinkDifficulty();
+end
+
 function EncounterJournalLinkButton_OnShow(self)
-	if not GetCVarBitfield("closedInfoFrames", LE_FRAME_TUTORIAL_BONUS_ROLL_ENCOUNTER_JOURNAL_LINK) then
+	local tutorialClosed = GetCVarBitfield("closedInfoFrames", LE_FRAME_TUTORIAL_BONUS_ROLL_ENCOUNTER_JOURNAL_LINK);
+	if not tutorialClosed and EncounterJournalLinkButton_IsLinkDataAvailable() then
 		self:GetParent().EncounterJournalLinkButtonHelp:Show();
 	end
 end
@@ -758,7 +764,7 @@ function EncounterJournalLinkButton_OnEnter(self)
 	GameTooltip:SetText(BONUS_ROLL_TOOLTIP_TITLE, HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b);
 	GameTooltip:AddLine(BONUS_ROLL_TOOLTIP_TEXT, nil, nil, nil, true);
 	
-	if ( BonusRollFrame.instanceID and BonusRollFrame.encounterID and GetBonusRollEncounterJournalLinkDifficulty() ) then
+	if ( EncounterJournalLinkButton_IsLinkDataAvailable() ) then
 		GameTooltip:AddLine(BONUS_ROLL_TOOLTIP_ENCOUNTER_JOURNAL_LINK, GREEN_FONT_COLOR.r, GREEN_FONT_COLOR.g, GREEN_FONT_COLOR.b, true);
 	end
 	

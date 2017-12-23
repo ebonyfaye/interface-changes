@@ -24,6 +24,10 @@ function StoreFrame_SetTokenCategory()
 	StoreFrame:SetAttribute("settokencategory");
 end
 
+function StoreFrame_OpenGamesCategory()
+	StoreFrame:SetAttribute("opengamescategory");
+end
+
 function StoreFrame_SetGamesCategory()
 	StoreFrame:SetAttribute("setgamescategory");
 end
@@ -48,5 +52,10 @@ if (InGlue()) then
 		data.realmName = GetServerName();
 		StoreFrame:SetAttribute("getvaserrormessage", data);
 		return StoreFrame:GetAttribute("vaserrormessageresult");
+	end
+
+	function StoreFrame_IsVASTransferProduct(productID)
+		StoreFrame:SetAttribute("isvastransferproduct", productID);
+		return StoreFrame:GetAttribute("isvastransferproductresult");
 	end
 end

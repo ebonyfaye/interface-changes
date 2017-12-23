@@ -27,10 +27,10 @@ end
 
 function ToggleMinimap()
 	if(Minimap:IsShown()) then
-		PlaySound("igMiniMapClose");
+		PlaySound(SOUNDKIT.IG_MINIMAP_CLOSE);
 		Minimap:Hide();
 	else
-		PlaySound("igMiniMapOpen");
+		PlaySound(SOUNDKIT.IG_MINIMAP_OPEN);
 		Minimap:Show();
 	end
 	UpdateUIPanelPositions();
@@ -73,11 +73,15 @@ function Minimap_SetTooltip( pvpType, factionName )
 			GameTooltip:AddLine( subzoneName, 1.0, 0.1, 0.1 );	
 			GameTooltip:AddLine(FREE_FOR_ALL_TERRITORY, 1.0, 0.1, 0.1);
 		elseif ( pvpType == "friendly" ) then
-			GameTooltip:AddLine( subzoneName, 0.1, 1.0, 0.1 );	
-			GameTooltip:AddLine(format(FACTION_CONTROLLED_TERRITORY, factionName), 0.1, 1.0, 0.1);
+			if (factionName and factionName ~= "") then
+				GameTooltip:AddLine( subzoneName, 0.1, 1.0, 0.1 );	
+				GameTooltip:AddLine(format(FACTION_CONTROLLED_TERRITORY, factionName), 0.1, 1.0, 0.1);
+			end
 		elseif ( pvpType == "hostile" ) then
-			GameTooltip:AddLine( subzoneName, 1.0, 0.1, 0.1 );	
-			GameTooltip:AddLine(format(FACTION_CONTROLLED_TERRITORY, factionName), 1.0, 0.1, 0.1);
+			if (factionName and factionName ~= "") then
+				GameTooltip:AddLine( subzoneName, 1.0, 0.1, 0.1 );	
+				GameTooltip:AddLine(format(FACTION_CONTROLLED_TERRITORY, factionName), 1.0, 0.1, 0.1);
+			end
 		elseif ( pvpType == "contested" ) then
 			GameTooltip:AddLine( subzoneName, 1.0, 0.7, 0.0 );	
 			GameTooltip:AddLine(CONTESTED_TERRITORY, 1.0, 0.7, 0.0);
@@ -111,13 +115,13 @@ end
 
 function Minimap_SetPing(x, y, playSound)
 	if ( playSound ) then
-		PlaySound("MapPing");
+		PlaySound(SOUNDKIT.MAP_PING);
 	end
 end
 
 function Minimap_ZoomInClick()
 	MinimapZoomOut:Enable();
-	PlaySound("igMiniMapZoomIn");
+	PlaySound(SOUNDKIT.IG_MINIMAP_ZOOM_IN);
 	Minimap:SetZoom(Minimap:GetZoom() + 1);
 	if(Minimap:GetZoom() == (Minimap:GetZoomLevels() - 1)) then
 		MinimapZoomIn:Disable();
@@ -126,7 +130,7 @@ end
 
 function Minimap_ZoomOutClick()
 	MinimapZoomIn:Enable();
-	PlaySound("igMiniMapZoomOut");
+	PlaySound(SOUNDKIT.IG_MINIMAP_ZOOM_OUT);
 	Minimap:SetZoom(Minimap:GetZoom() - 1);
 	if(Minimap:GetZoom() == 0) then
 		MinimapZoomOut:Disable();
@@ -651,7 +655,7 @@ function GarrisonMinimap_Justify(text)
 end
 
 function GarrisonMinimapInvasion_ShowPulse(self)
-	PlaySound("UI_Garrison_Toast_InvasionAlert");
+	PlaySound(SOUNDKIT.UI_GARRISON_TOAST_INVASION_ALERT);
 	self.AlertText:SetText(GARRISON_LANDING_INVASION_ALERT);
 	GarrisonMinimap_Justify(self.AlertText);
 	GarrisonMinimap_SetPulseLock(self, GARRISON_ALERT_CONTEXT_INVASION, true);

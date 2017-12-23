@@ -32,7 +32,7 @@ end
 
 function WorldQuestDataProviderMixin:OnShow()
 	assert(self.ticker == nil);
-	self.ticker = C_Timer.NewTicker(10, function() self:RefreshAllData() end);
+	self.ticker = C_Timer.NewTicker(0.5, function() self:RefreshAllData() end);
 end
 
 function WorldQuestDataProviderMixin:OnHide()
@@ -55,7 +55,7 @@ function WorldQuestDataProviderMixin:RefreshAllData(fromOnShow)
 	for zoneIndex = 1, C_MapCanvas.GetNumZones(mapAreaID) do
 		local zoneMapID, zoneName, zoneDepth, left, right, top, bottom = C_MapCanvas.GetZoneInfo(mapAreaID, zoneIndex);
 		if zoneDepth <= 1 then -- Exclude subzones
-			local taskInfo = C_TaskQuest.GetQuestsForPlayerByMapID(zoneMapID, mapAreaID);
+			local taskInfo = C_TaskQuest.GetQuestsForPlayerByMapID(zoneMapID, mapAreaID, self:GetTransformFlags());
 
 			if taskInfo then
 				for i, info in ipairs(taskInfo) do
@@ -91,7 +91,7 @@ function WorldQuestDataProviderMixin:AddWorldQuest(info)
 	pin.numObjectives = info.numObjectives;
 	pin:SetFrameLevel(1000 + self:GetMap():GetNumActivePinsByTemplate("WorldQuestPinTemplate"));
 
-	local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex, allowDisplayPastCritical = GetQuestTagInfo(info.questId);
+	local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex, displayTimeLeft = GetQuestTagInfo(info.questId);
 	local tradeskillLineID = tradeskillLineIndex and select(7, GetProfessionInfo(tradeskillLineIndex));
 
 	if rarity ~= LE_WORLD_QUEST_QUALITY_COMMON then
@@ -168,7 +168,6 @@ function WorldQuestDataProviderMixin:AddWorldQuest(info)
 	end
 
 	pin:SetPosition(info.x, info.y);
-	pin:Show();
 
 	C_TaskQuest.RequestPreloadRewardData(info.questId);
 
@@ -180,7 +179,7 @@ WorldQuestPinMixin = CreateFromMixins(MapCanvasPinMixin);
 
 function WorldQuestPinMixin:OnLoad()
 	self:SetAlphaLimits(2.0, 0.0, 1.0);
-	self:SetScalingLimits(1, 1.5, 0.50);
+	self:SetScalingLimits(1, 0.4125, 0.425);
 
 	self.UpdateTooltip = self.OnMouseEnter;
 
@@ -191,7 +190,7 @@ function WorldQuestPinMixin:OnLoad()
 end
 
 function WorldQuestPinMixin:RefreshVisuals()
-	local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex, allowDisplayPastCritical = GetQuestTagInfo(self.questID);
+	local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex, displayTimeLeft = GetQuestTagInfo(self.questID);
 	local selected = self.questID == GetSuperTrackedQuestID();
 	self.Glow:SetShown(selected);
 	self.SelectedGlow:SetShown(rarity ~= LE_WORLD_QUEST_QUALITY_COMMON and selected);
@@ -210,8 +209,6 @@ function WorldQuestPinMixin:RefreshVisuals()
 	else
 		self:SetAlphaLimits(2.0, 0.0, 1.0);
 	end
-	
-	self:Show();
 end
 
 function WorldQuestPinMixin:OnMouseEnter()

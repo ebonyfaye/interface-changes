@@ -462,7 +462,7 @@ function PVPHonorXPBarPrestige_OnClick(self)
     
     SetCVarBitfield("closedInfoFrames", LE_FRAME_TUTORIAL_HONOR_TALENT_PRESTIGE, true);
     PlayerTalentFramePVPTalents.TutorialBox:Hide();
-	PlaySound("UI_PVP_Honor_Prestige_OpenWindow");                          
+	PlaySound(SOUNDKIT.UI_PVP_HONOR_PRESTIGE_OPEN_WINDOW);                          
     frame:Show();
 end
 
@@ -493,7 +493,7 @@ function HonorExhaustionTick_Update(self, isMainMenuBar)
 	local exhaustionStateID, exhaustionStateName, exhaustionStateMultiplier, exhaustionTickSet;
 	exhaustionStateID, exhaustionStateName, exhaustionStateMultiplier = GetHonorRestState();
 	
-	if (not exhaustionThreshold or exhaustionTreshold == 0) then
+	if (not exhaustionThreshold or exhaustionThreshold == 0) then
 		self:Hide();
 		fillBar:Hide();
 		return;

@@ -17,6 +17,9 @@ local SKIRMISH_REWARD = "skirmish";
 local RATED_BG_REWARD = "ratedbg";
 local ARENA_2V2_REWARD = "arena2v2";
 local ARENA_3V3_REWARD = "arena3v3";
+local BG_BRAWL_REWARD = "bgbrawl";
+local ARENA_BRAWL_REWARD = "arenabrawl";
+local LFG_BRAWL_REWARD = "lfgbrawl";
 
 local REWARDS_AT_MAX_LEVEL = {
 	[RANDOM_BG_REWARD] = {
@@ -38,7 +41,19 @@ local REWARDS_AT_MAX_LEVEL = {
 	[ARENA_3V3_REWARD] = {
 		["FirstWin"] = 147202,
 		["NthWin"] = 147198,
-	}
+	},
+	[BG_BRAWL_REWARD] = {
+		["FirstWin"] = 143680,
+		["NthWin"] = 138880,
+	},
+	[ARENA_BRAWL_REWARD] = {
+		["FirstWin"] = 143713,
+		["NthWin"] = 138864,
+	},
+	[LFG_BRAWL_REWARD] = {
+		["FirstWin"] = 143713,
+		["NthWin"] = 138864,
+	},
 }
 
 function GetMaxLevelReward(bracketType, hasFirstWin)
@@ -55,7 +70,9 @@ function GetMaxLevelReward(bracketType, hasFirstWin)
 	local ARENA_2V2_ID = 1;
 	local ARENA_3V3_ID = 2;
 	local RATED_BG_ID = 4;
-	if (bracketType == RANDOM_BATTLEGROUNDS) then
+	if (REWARDS_AT_MAX_LEVEL[bracketType]) then
+		id = REWARDS_AT_MAX_LEVEL[bracketType][key];
+	elseif (bracketType == RANDOM_BATTLEGROUNDS) then
 		id = REWARDS_AT_MAX_LEVEL[RANDOM_BG_REWARD][key];
 	elseif (bracketType == SKIRMISH) then
 		id = REWARDS_AT_MAX_LEVEL[SKIRMISH_REWARD][key];
@@ -78,7 +95,7 @@ function GetMaxLevelReward(bracketType, hasFirstWin)
 	end
 	return { { id=id, name=name, texture=texture, quantity=1 } };
 end
-
+ 
 ---------------------------------------------------------------
 -- PVP FRAME
 ---------------------------------------------------------------
@@ -118,7 +135,7 @@ function PVPUIFrame_OnShow(self)
 		return;
 	end
 	UpdateMicroButtons();
-	PlaySound("igCharacterInfoOpen");
+	PlaySound(SOUNDKIT.IG_CHARACTER_INFO_OPEN);
 	RequestPVPRewards();
 
 	PVPUIFrame_UpdateSelectedRoles();
@@ -127,7 +144,7 @@ end
 
 function PVPUIFrame_OnHide(self)
 	UpdateMicroButtons();
-	PlaySound("igCharacterInfoClose");
+	PlaySound(SOUNDKIT.IG_CHARACTER_INFO_CLOSE);
 	ClearBattlemaster();
 end
 
@@ -361,7 +378,7 @@ end
 
 function PVPQueueFrameButton_OnClick(self)
 	local frameName = pvpFrames[self:GetID()];
-	PlaySound("igCharacterInfoOpen");
+	PlaySound(SOUNDKIT.IG_CHARACTER_INFO_OPEN);
 	PVPQueueFrame_ShowFrame(_G[frameName]);
 end
 
@@ -418,6 +435,7 @@ function HonorFrame_OnLoad(self)
 	self:RegisterEvent("LFG_LIST_ACTIVE_ENTRY_UPDATE");
 	self:RegisterEvent("LFG_LIST_SEARCH_RESULT_UPDATED");
     self:RegisterEvent("PLAYER_LEVEL_UP");
+	self:RegisterEvent("PVP_WORLDSTATE_UPDATE");
 	
 	if( UIParent.variablesLoaded ) then
 		HonorFrame_UpdateBlackList();
@@ -442,7 +460,7 @@ function HonorFrame_OnEvent(self, event, ...)
 		HonorFrameBonusFrame_Update();
 	elseif ( event == "GROUP_ROSTER_UPDATE" ) then
 		HonorFrame_UpdateQueueButtons();
-	elseif ( event == "PVP_REWARDS_UPDATE" ) then
+	elseif ( event == "PVP_REWARDS_UPDATE" or event == "PVP_WORLDSTATE_UPDATE" ) then
 		if ( self:IsShown() ) then
 			RequestRandomBattlegroundInstanceInfo();
 		end
@@ -509,6 +527,7 @@ function HonorFrame_UpdateQueueButtons()
 	local HonorFrame = HonorFrame;
 	local canQueue;
 	local arenaID;
+	local isBrawl;
 	if ( HonorFrame.type == "specific" ) then
 		if ( HonorFrame.SpecificFrame.selectionID ) then
 			canQueue = true;
@@ -517,6 +536,7 @@ function HonorFrame_UpdateQueueButtons()
 		if ( HonorFrame.BonusFrame.selectedButton ) then
 			canQueue = HonorFrame.BonusFrame.selectedButton.canQueue;
 			arenaID = HonorFrame.BonusFrame.selectedButton.arenaID;
+			isBrawl = HonorFrame.BonusFrame.selectedButton.isBrawl;
 		end
 	end
 
@@ -538,6 +558,10 @@ function HonorFrame_UpdateQueueButtons()
 		end
 	end
 
+	if isBrawl and not canQueue then
+		disabledReason = INSTANCE_UNAVAILABLE_SELF_LEVEL_TOO_LOW;
+	end
+
 	if ( canQueue ) then
 		HonorFrame.QueueButton:Enable();
 		if ( IsInGroup(LE_PARTY_CATEGORY_HOME) ) then
@@ -551,7 +575,7 @@ function HonorFrame_UpdateQueueButtons()
 		end
 	else
 		HonorFrame.QueueButton:Disable();
-		if (HonorFrame.type == "bonus" and HonorFrame.BonusFrame.selectedButton.queueID) then
+		if (HonorFrame.type == "bonus" and HonorFrame.BonusFrame.selectedButton and HonorFrame.BonusFrame.selectedButton.queueID) then
 			if not disabledReason then
 				disabledReason = LFGConstructDeclinedMessage(HonorFrame.BonusFrame.selectedButton.queueID);
 			end
@@ -695,7 +719,7 @@ function HonorFrameSpecificList_FindAndSelectBattleground(bgID)
 end
 
 function HonorFrameSpecificBattlegroundButton_OnClick(self)
-	PlaySound("igMainMenuOptionCheckBoxOn");
+	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 	HonorFrame.SpecificFrame.selectionID = self.bgID;
 	HonorFrameSpecificList_Update();
 end
@@ -781,7 +805,19 @@ end
 
 BONUS_BUTTON_TOOLTIPS = {
 	RandomBG = {
-		tooltipKey = "RANDOM_BG",
+		func = function(self)
+			GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+			GameTooltip:SetText(BONUS_BUTTON_RANDOM_BG_TITLE, 1, 1, 1);
+			GameTooltip:AddLine(BONUS_BUTTON_RANDOM_BG_DESC, nil, nil, nil, true);
+			
+			local bgNames = HonorFrameBonusFrame_GetExcludedBattlegroundNames();
+			if bgNames then
+				local r, g, b = DULL_RED_FONT_COLOR:GetRGB();
+				GameTooltip:AddLine(BONUS_BUTTON_RANDOM_BG_EXCLUDED:format(bgNames), r, g, b, true);
+			end
+			
+			GameTooltip:Show();
+		end,
 	},
 	Skirmish = {
 		tooltipKey = "SKIRMISH",
@@ -825,7 +861,6 @@ function HonorFrameBonusFrame_OnShow(self)
 
 	RequestLFDPlayerLockInfo();
 	RequestLFDPartyLockInfo();
-	C_PvP.RequestBrawlInfo();
 	self:RegisterEvent("PVP_BRAWL_INFO_UPDATED");
 end
 
@@ -862,6 +897,8 @@ end
 function HonorFrameBonusFrame_Update()
 	local englishFaction = UnitFactionGroup("player");
 	local selectButton = nil;
+	local battlegroundEnlistmentActive, brawlEnlistmentActive = C_PvP.IsBattlegroundEnlistmentBonusActive();
+
 	-- random bg
 	do
 		local button = HonorFrame.BonusFrame.RandomBGButton;
@@ -892,6 +929,7 @@ function HonorFrameBonusFrame_Update()
 			button.Reward.experience = experience;
 			button.Reward.itemID = id;
 			button.Reward:Show();
+			button.Reward.EnlistmentBonus:SetShown(battlegroundEnlistmentActive);
 		else
 			button.Reward:Hide();
 		end
@@ -932,16 +970,24 @@ function HonorFrameBonusFrame_Update()
 		-- brawls
 		local button = HonorFrame.BonusFrame.BrawlButton;
 		local brawlInfo = C_PvP.GetBrawlInfo();
-		button.canQueue = brawlInfo.active;
+		local isMaxLevel = UnitLevel("player") >= MAX_PLAYER_LEVEL;
+		button.canQueue = brawlInfo and brawlInfo.active and isMaxLevel;
+		button.isBrawl = true;
 
-		if (brawlInfo.active) then
+		if (brawlInfo and brawlInfo.active) then
 			button:Enable();
 			button.Contents.Title:SetText(brawlInfo.name);
 			button.Contents.Title:SetFontObject("GameFontHighlightMedium")
-			local honor, experience, rewards = C_PvP.GetRandomBGRewards();
+			local honor, experience, rewards, hasWon = C_PvP.GetBrawlRewards(brawlInfo.brawlType);
 
 			if (not rewards) then
-				rewards = GetMaxLevelReward(RANDOM_BATTLEGROUNDS, hasWon);
+				if (brawlInfo.brawlType == Enum.BrawlType.Arena) then
+					rewards = GetMaxLevelReward(ARENA_BRAWL_REWARD, hasWon);
+				elseif (brawlInfo.brawlType == Enum.BrawlType.Battleground) then
+					rewards = GetMaxLevelReward(BG_BRAWL_REWARD, hasWon);
+				elseif (brawlInfo.brawlType == Enum.BrawlType.Lfg) then
+					rewards = GetMaxLevelReward(LFG_BRAWL_REWARD, hasWon);
+				end
 			end
 
 			if (rewards and #rewards > 0) then
@@ -951,11 +997,12 @@ function HonorFrameBonusFrame_Update()
 				button.Reward.experience = experience;
 				button.Reward.itemID = id;
 				button.Reward:Show();
+				button.Reward.EnlistmentBonus:SetShown(brawlEnlistmentActive);
 			else
 				button.Reward:Hide();
 			end
 		else
-			local timeUntilNext = brawlInfo.timeLeftUntilNextChange;
+			local timeUntilNext = brawlInfo and brawlInfo.timeLeftUntilNextChange or 0;
 			if (timeUntilNext == 0) then
 				button.Contents.Title:SetText(BRAWL_CLOSED);
 			else
@@ -965,7 +1012,7 @@ function HonorFrameBonusFrame_Update()
 			button.Reward:Hide();
 			button:Disable();
 		end
-		HonorFrame.BonusFrame.BrawlHelpBox:SetShown(ShouldShowBrawlHelpBox(brawlInfo.active, (UnitLevel("player") >= MAX_PLAYER_LEVEL)));
+		HonorFrame.BonusFrame.BrawlHelpBox:SetShown(ShouldShowBrawlHelpBox(brawlInfo and brawlInfo.active, (UnitLevel("player") >= MAX_PLAYER_LEVEL)));
 	end
 
 	-- select a button if one isn't selected
@@ -976,7 +1023,7 @@ function HonorFrameBonusFrame_Update()
 	end
 end
 
-function HonorFrameBonusFrame_UpdateExcludedBattlegrounds()
+function HonorFrameBonusFrame_GetExcludedBattlegroundNames()
 	local bgNames;
 	for i = 1, MAX_BLACKLIST_BATTLEGROUNDS do
 		local mapName = GetBlacklistMapName(i);
@@ -988,6 +1035,12 @@ function HonorFrameBonusFrame_UpdateExcludedBattlegrounds()
 			end
 		end
 	end
+	
+	return bgNames;
+end
+
+function HonorFrameBonusFrame_UpdateExcludedBattlegrounds()
+	local bgNames = HonorFrameBonusFrame_GetExcludedBattlegroundNames();
 	if ( bgNames ) then
 		HonorFrame.BonusFrame.RandomBGButton.Contents.Title:SetPoint("LEFT", HonorFrame.BonusFrame.RandomBGButton.Contents, "LEFT", 14, 8);
 		HonorFrame.BonusFrame.RandomBGButton.Contents.ThumbTexture:Show();
@@ -1250,7 +1303,7 @@ function ConquestFrameButton_OnClick(self, button)
 	CloseDropDownMenus();
 	if ( button == "LeftButton" or self.teamIndex ) then
 		ConquestFrame_SelectButton(self);
-		PlaySound("igMainMenuOptionCheckBoxOn");
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 	end
 end
 
@@ -1291,10 +1344,11 @@ function ConquestFrameButton_OnEnter(self)
 	tooltip.SeasonBest:SetText(PVP_BEST_RATING..seasonBest);
 	tooltip.SeasonWon:SetText(PVP_GAMES_WON..seasonWon);
 	tooltip.SeasonGamesPlayed:SetText(PVP_GAMES_PLAYED..seasonPlayed);
-	
-	local maxWidth = max(tooltip.Title:GetStringWidth(),tooltip.WeeklyBest:GetStringWidth(),
-						tooltip.WeeklyGamesPlayed:GetStringWidth(),	tooltip.SeasonBest:GetStringWidth(),
-						tooltip.SeasonGamesPlayed:GetStringWidth());
+
+	local maxWidth = 0;
+	for i, fontString in ipairs(tooltip.Content) do
+		maxWidth = math.max(maxWidth, fontString:GetStringWidth());
+	end
 	
 	tooltip:SetWidth(maxWidth + CONQUEST_TOOLTIP_PADDING);
 	tooltip:SetPoint("TOPLEFT", self, "TOPRIGHT", 0, 0);
@@ -1306,6 +1360,9 @@ end
 ---------------------------------------------------------------
 
 function PVPRewardTemplate_OnEnter(self)
+	if (not self.Icon:IsShown()) then
+		return;
+	end
 	PVPRewardTooltip:ClearAllPoints();
 	PVPRewardTooltip:SetPoint("BOTTOMLEFT", self, "TOPRIGHT");
 	if (self.experience > 0) then
@@ -1341,6 +1398,15 @@ end
 function PVPRewardWeeklyBonus_OnLeave(self)
 	GameTooltip:Hide();
 	ConquestFrame.activeWeeklyBonus = nil;
+end
+
+function PVPRewardEnlistmentBonus_OnEnter(self)
+	GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+	local spellName = GetSpellInfo(BATTLEGROUND_ENLISTMENT_BONUS);
+	local spellDesc = GetSpellDescription(BATTLEGROUND_ENLISTMENT_BONUS);
+	GameTooltip:SetText(spellName);
+	GameTooltip:AddLine(spellDesc, 1, 1, 1, true);
+	GameTooltip:Show();
 end
 
 ---------------------------------------------------------------
@@ -1488,7 +1554,7 @@ function WarGameButtonHeader_OnClick(self)
 	end
 	WarGamesFrame.otherHeaderIndex = nil;	-- header location probably changed;
 	WarGamesFrame_Update();
-	PlaySound("igMainMenuOptionCheckBoxOn");
+	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 end
 
 function WarGameButton_OnEnter(self)
@@ -1507,7 +1573,7 @@ function WarGameButton_OnClick(self)
 	local index = self:GetParent().index;
 	SetSelectedWarGameType(index);
 	WarGamesFrame_Update();
-	PlaySound("igMainMenuOptionCheckBoxOn");
+	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 end
 
 function WarGameStartButton_Update()
@@ -1552,10 +1618,43 @@ function WarGameStartButton_GetErrorTooltip()
 end
 
 function WarGameStartButton_OnClick(self)
-	PlaySound("igMainMenuOptionCheckBoxOn");
+	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 	local name = GetWarGameTypeInfo(GetSelectedWarGameType());
 	if ( name ) then
 		StartWarGame("target", name, WarGameTournamentModeCheckButton:GetChecked());
 	end
 end
 
+function PvPObjectiveBannerFrame_PlayBanner(self, data)
+	name = data.name or "";
+	description = data.description or "";
+
+	self.Title:SetText(name);
+	self.TitleFlash:SetText(name);
+	self.BonusLabel:SetText(description);
+
+	-- offsets for anims
+	local xOffset = QueueStatusMinimapButton:GetLeft() - self:GetLeft();
+	local yOffset = QueueStatusMinimapButton:GetTop() - self:GetTop() + 64;
+
+	self.Anim.BG1Translation:SetOffset(xOffset, yOffset);
+	self.Anim.TitleTranslation:SetOffset(xOffset, yOffset);
+	self.Anim.BonusLabelTranslation:SetOffset(xOffset, yOffset);
+	self.Anim.IconTranslation:SetOffset(xOffset, yOffset);
+	-- hide zone text as it's very likely to be up
+	ZoneText_Clear();
+	-- show and play
+	self:Show();
+	self.Anim:Stop();
+	self.Anim:Play();
+end
+
+function PvPObjectiveBannerFrame_StopBanner(self)
+	self.Anim:Stop();
+	self:Hide();
+end
+
+function PvPObjectiveBannerFrame_OnAnimFinished()
+	TopBannerManager_BannerFinished();
+	PvPObjectiveBannerFrame:Hide();
+end

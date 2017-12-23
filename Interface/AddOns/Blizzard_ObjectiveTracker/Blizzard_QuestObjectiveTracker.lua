@@ -30,6 +30,7 @@ function QUEST_TRACKER_MODULE:OnFreeTypedLine(line)
 		line.Glow.Anim:Stop();
 		line.Sheen.Anim:Stop();
 		line.CheckFlash.Anim:Stop();
+		line.CheckFlash:SetAlpha(0);
 		line.FadeOutAnim:Stop();
 	end
 end
@@ -66,7 +67,8 @@ function QUEST_TRACKER_MODULE:OnBlockHeaderClick(block, mouseButton)
 				AutoQuestPopupTracker_RemovePopUp(block.id);
 				ShowQuestComplete(questLogIndex);
 			else
-				QuestLogPopupDetailFrame_Show(questLogIndex);
+				ShowQuestLog();
+				QuestMapFrame_ShowQuestDetails(block.id);
 			end
 		end
 		return;
@@ -278,7 +280,7 @@ function QuestObjectiveTracker_DoQuestObjectives(block, numObjectives, questComp
 							line.Sheen.Anim:Play();
 							line.Glow.Anim:Play();
 							line.state = "ADDING";
-							PlaySound("UI_QuestRollingForward_01");
+							PlaySound(SOUNDKIT.UI_QUEST_ROLLING_FORWARD_01);
 						else
 							QUEST_TRACKER_MODULE:AddObjective(block, objectiveIndex, text);
 							if ( objectiveType == "progressbar" ) then

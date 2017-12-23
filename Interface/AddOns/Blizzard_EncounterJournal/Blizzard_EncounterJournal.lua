@@ -75,6 +75,7 @@ local EJ_DIFFICULTIES =
 	{ prefix = PLAYER_DIFFICULTY1, difficultyID = 14 },
 	{ prefix = PLAYER_DIFFICULTY2, difficultyID = 15 },
 	{ prefix = PLAYER_DIFFICULTY6, difficultyID = 16 },
+	{ prefix = PLAYER_DIFFICULTY_TIMEWALKER, difficultyID = 33 },
 }
 
 local EJ_TIER_DATA =
@@ -241,7 +242,7 @@ function EncounterJournal_OnShow(self)
 	MicroButtonPulseStop(EJMicroButton);
 
 	UpdateMicroButtons();
-	PlaySound("igCharacterInfoOpen");
+	PlaySound(SOUNDKIT.IG_CHARACTER_INFO_OPEN);
 	EncounterJournal_LootUpdate()
 
 	local instanceSelect = EncounterJournal.instanceSelect;
@@ -281,7 +282,7 @@ end
 
 function EncounterJournal_OnHide(self)
 	UpdateMicroButtons();
-	PlaySound("igCharacterInfoClose");
+	PlaySound(SOUNDKIT.IG_CHARACTER_INFO_CLOSE);
 	if self.searchBox.clearButton then
 		self.searchBox.clearButton:Click();
 	end
@@ -843,6 +844,13 @@ function EncounterJournal_UpdateButtonState(self)
 	self.tex.down[3]:Hide();
 end
 
+function EncounterJournal_OnHyperlinkEnter(self, link, text, fontString, left, bottom, width, height)
+	self.tooltipFrame:SetOwner(self, "ANCHOR_PRESERVE");
+	self.tooltipFrame:ClearAllPoints();
+	self.tooltipFrame:SetPoint("BOTTOMLEFT", fontString, "TOPLEFT", left + width, bottom);
+	self.tooltipFrame:SetHyperlink(link, EJ_GetDifficulty());
+end
+
 function EncounterJournal_CleanBullets(self, start, keep)
 	if (not self.Bullets) then return end
     start = start or 1;
@@ -1376,7 +1384,7 @@ function EncounterJournal_ResetHeaders()
 		EJ_section_openTable[key] = nil;
 	end
 
-	PlaySound("igMainMenuOptionCheckBoxOn");
+	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 	EncounterJournal_Refresh();
 end
 
@@ -1399,9 +1407,15 @@ end
 function EncounterJournal_FocusSectionCallback(self)
 	if self.cbCount > 0 then
 		local _, _, _, _, anchorY = self:GetPoint();
-		anchorY = abs(anchorY);
-		anchorY = anchorY - EncounterJournal.encounter.info.detailsScroll:GetHeight()/2;
-		EncounterJournal.encounter.info.detailsScroll.ScrollBar:SetValue(anchorY);
+		local scrollFrame = self:GetParent():GetParent();
+		if ( self.isOverview ) then
+			-- +4 puts the scrollbar all the way at the bottom when going to the last section
+			anchorY = scrollFrame:GetBottom() - self.descriptionBG:GetBottom() + 4;
+		else
+			anchorY = abs(anchorY);
+			anchorY = anchorY - scrollFrame:GetHeight()/2;
+		end
+		scrollFrame.ScrollBar:SetValue(anchorY);
 		self:SetScript("OnUpdate", nil);
 	end
 	self.cbCount = self.cbCount + 1;
@@ -1490,7 +1504,7 @@ end
 function EncounterJournal_TabClicked(self, button)
 	local tabType = self:GetID();
 	EncounterJournal_SetTab(tabType);
-	PlaySound("igAbiliityPageTurn");
+	PlaySound(SOUNDKIT.IG_ABILITY_PAGE_TURN);
 end
 
 function EncounterJournal_SetTab(tabType)
@@ -1626,7 +1640,7 @@ end
 
 function EncounterJournal_Loot_OnClick(self)
 	if (EncounterJournal.encounterID ~= self.encounterID) then
-		PlaySound("igSpellBookOpen");
+		PlaySound(SOUNDKIT.IG_SPELLBOOK_OPEN);
 		EncounterJournal_DisplayEncounter(self.encounterID);
 	end
 end
@@ -2258,7 +2272,7 @@ function EJ_ContentTab_Select(id)
 		EncounterJournal_ListInstances();
 		EncounterJournal_EnableTierDropDown();
 	end
-	PlaySound("igMainMenuOptionCheckBoxOn");
+	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 end
 
 function EJ_HideSuggestPanel()
@@ -2476,8 +2490,7 @@ function EJNAV_RefreshInstance()
 end
 
 function EJNAV_SelectInstance(self, index, navBar)
-	local showRaid = not EncounterJournal.instanceSelect.raidsTab:IsEnabled();
-	local instanceID = EJ_GetInstanceByIndex(index, showRaid);
+	local instanceID = EJ_GetInstanceByIndex(index, EJ_InstanceIsRaid());
 
 	--Clear any previous selection.
 	NavBar_Reset(navBar);
@@ -2535,14 +2548,14 @@ end
 function EJSuggestFrame_NextSuggestion()
 	if ( C_AdventureJournal.GetPrimaryOffset() < C_AdventureJournal.GetNumAvailableSuggestions()-1 ) then
 		C_AdventureJournal.SetPrimaryOffset(C_AdventureJournal.GetPrimaryOffset()+1);
-		PlaySound("igAbiliityPageTurn");
+		PlaySound(SOUNDKIT.IG_ABILITY_PAGE_TURN);
 	end
 end
 
 function EJSuggestFrame_PrevSuggestion()
 	if( C_AdventureJournal.GetPrimaryOffset() > 0 ) then
 		C_AdventureJournal.SetPrimaryOffset(C_AdventureJournal.GetPrimaryOffset()-1);
-		PlaySound("igAbiliityPageTurn");
+		PlaySound(SOUNDKIT.IG_ABILITY_PAGE_TURN);
 	end
 end
 
@@ -2806,7 +2819,7 @@ end
 
 function EJSuggestFrame_OnClick(self)
 	C_AdventureJournal.ActivateEntry(self.index);
-	PlaySound("igMainMenuOptionCheckBoxOn");
+	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 end
 
 function AdventureJournal_Reward_OnEnter(self)

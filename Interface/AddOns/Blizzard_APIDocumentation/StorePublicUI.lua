@@ -26,8 +26,26 @@ local StorePublicUI =
 		},
 	},
 
+	Events =
+	{
+	},
+
 	Tables =
 	{
+		{
+			Name = "StoreDeliveryType",
+			Type = "Enumeration",
+			NumValues = 4,
+			MinValue = 0,
+			MaxValue = 3,
+			Fields =
+			{
+				{ Name = "Item", Type = "StoreDeliveryType", EnumValue = 0 },
+				{ Name = "Mount", Type = "StoreDeliveryType", EnumValue = 1 },
+				{ Name = "Battlepet", Type = "StoreDeliveryType", EnumValue = 2 },
+				{ Name = "Collection", Type = "StoreDeliveryType", EnumValue = 3 },
+			},
+		},
 	},
 };
 

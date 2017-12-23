@@ -284,8 +284,27 @@ function SetItemRef(link, text, button, chatFrame)
 		return;
 	elseif ( strsub(link, 1, 3) == "api" ) then
 		APIDocumentation_LoadUI();
-		APIDocumentation:HandleAPILink(link, button == "RightButton");
+
+		local command = APIDocumentation.Commands.Default;
+		if button == "RightButton" then
+			command = APIDocumentation.Commands.CopyAPI;
+		elseif IsModifiedClick("CHATLINK") then
+			command = APIDocumentation.Commands.OpenDump;
+		end
+
+		APIDocumentation:HandleAPILink(link, command);
 		return;
+	elseif ( strsub(link, 1, 13) == "storecategory" ) then
+		local _, category = strsplit(":", link);
+		if category == "token" then
+			StoreFrame_SetTokenCategory();
+			ToggleStoreUI();
+		elseif category == "games" then
+			StoreFrame_OpenGamesCategory();
+		elseif category == "services" then
+			StoreFrame_SetServicesCategory();
+			ToggleStoreUI();
+		end
 	end
 
 	if ( IsModifiedClick() ) then

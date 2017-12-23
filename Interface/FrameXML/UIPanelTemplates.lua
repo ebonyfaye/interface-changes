@@ -32,7 +32,7 @@ function SearchBoxTemplate_OnTextChanged(self)
 end
 
 function SearchBoxTemplateClearButton_OnClick(self)
-	PlaySound("igMainMenuOptionCheckBoxOn");
+	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 	local editBox = self:GetParent();
 	editBox:SetText("");
 	editBox:ClearFocus();
@@ -88,18 +88,6 @@ function BagSearch_OnChar(self, text)
 			self:ClearFocus();
 		end
 	end
-end
-
-function ScrollingEdit_OnTextChanged(self, scrollFrame)
-	-- force an update when the text changes
-	self.handleCursorChange = true;
-	ScrollingEdit_OnUpdate(self, 0, scrollFrame);
-end
-
-function ScrollingEdit_OnCursorChanged(self, x, y, w, h)
-	self.cursorOffset = y;
-	self.cursorHeight = h;
-	self.handleCursorChange = true;
 end
 
 UIFrameCache = CreateFrame("FRAME");
@@ -175,6 +163,22 @@ function TruncatedButton_OnLeave(self)
 	end
 end
 
+-- Truncated Tooltip Script code
+
+function TruncatedTooltipScript_OnEnter(self)
+	local text = self.truncatedTooltipScriptText or self.Text;
+	if text:IsTruncated() then
+		GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+		GameTooltip:SetText(text:GetText());
+		GameTooltip:Show();
+	end
+end
+
+function TruncatedTooltipScript_OnLeave(self)
+	if GameTooltip:GetOwner() == self then
+		GameTooltip:Hide();
+	end
+end
 
 -- SquareButton template code
 SQUARE_BUTTON_TEXCOORDS = {
@@ -375,11 +379,12 @@ end
 
 CurrencyTemplateMixin = {};
 
-function CurrencyTemplateMixin:SetCurrencyFromID(currencyID, amount, formatString)
+function CurrencyTemplateMixin:SetCurrencyFromID(currencyID, amount, formatString, colorCode)
 	local _, _, currencyTexture = GetCurrencyInfo(currencyID);
 	local markup = CreateTextureMarkup(currencyTexture, 64, 64, 16, 16, 0, 1, 0, 1);
+	colorCode = colorCode or HIGHLIGHT_FONT_COLOR_CODE;
 
-	local currencyString = ("|cffffffff%s %s|r"):format(BreakUpLargeNumbers(amount), markup);
+	local currencyString = ("%s%s %s|r"):format(colorCode, BreakUpLargeNumbers(amount), markup);
 
 	if formatString then
 		self:SetText(formatString:format(currencyString));

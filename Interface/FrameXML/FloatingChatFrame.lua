@@ -66,8 +66,9 @@ function FloatingChatFrame_OnLoad(self)
 	chatTab.mouseOverAlpha = CHAT_FRAME_TAB_SELECTED_MOUSEOVER_ALPHA;
 	chatTab.noMouseAlpha = CHAT_FRAME_TAB_SELECTED_NOMOUSE_ALPHA;
 
-	FRAMELOCK_STATES.PETBATTLEOPENING[self:GetName()] = "hidden";
-	FRAMELOCK_STATES.PETBATTLEOPENING[chatTab:GetName()] = "hidden";
+	FRAMELOCK_STATES.COMMENTATOR_SPECTATING_MODE[self:GetName()] = "hidden";
+	FRAMELOCK_STATES.COMMENTATOR_SPECTATING_MODE[self:GetName().."Editbox"] = "hidden";
+	FRAMELOCK_STATES.COMMENTATOR_SPECTATING_MODE[chatTab:GetName()] = "hidden";
 	UpdateFrameLock(self);
 	UpdateFrameLock(chatTab);
 end
@@ -1579,6 +1580,7 @@ function FCF_Tab_OnClick(self, button)
 	if ( GetCVar("chatStyle") ~= "classic" ) then
 		ChatEdit_SetLastActiveWindow(chatFrame.editBox);
 	end
+	chatFrame:ResetAllFadeTimes();
 	FCF_FadeInChatFrame(chatFrame);
 end
 
@@ -2193,7 +2195,7 @@ function FCFDock_GetInsertIndex(dock, chatFrame, mouseX, mouseY)
 		return maxPosition + 1;
 	else
 		--Find the dynamic insertion spot
-		local maxPosition = 9^9;
+		local maxPosition = 387420489; -- 9^9
 		local leftTab = FCFDockScrollFrame_GetLeftmostTab(dock.scrollFrame);
 		local numDynTabsDisplayed = dock.scrollFrame:GetWidth() / dock.scrollFrame.dynTabSize;
 
@@ -2342,7 +2344,7 @@ function FCFDockOverflowButton_UpdatePulseState(self)
 end
 
 function FCFDockOverflowButton_OnClick(self, button)
-	PlaySound("UChatScrollButton");
+	PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON);
 	if ( self.list:IsShown() ) then
 		self.list:Hide();
 	else

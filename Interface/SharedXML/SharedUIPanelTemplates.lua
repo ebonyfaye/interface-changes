@@ -587,13 +587,13 @@ function PanelTemplates_ResizeTabsToFit(frame, maxWidthForAllTabs)
 	end
 
 	local currentTab = GetTabByIndex(frame, selectedIndex);
-	PanelTemplates_TabResize(currentTab);
+	PanelTemplates_TabResize(currentTab, 0);
 	local availableWidth = maxWidthForAllTabs - currentTab:GetWidth();
 	local widthPerTab = availableWidth / (frame.numTabs - 1);
 	for i = 1, frame.numTabs do
 		if ( i ~= selectedIndex ) then
 			local tab = GetTabByIndex(frame, i);
-			PanelTemplates_TabResize(tab, _, widthPerTab);
+			PanelTemplates_TabResize(tab, 0, widthPerTab);
 		end
 	end
 end
@@ -736,6 +736,25 @@ function ScrollingEdit_OnUpdate(self, elapsed, scrollFrame)
 	end
 end
 
+function ScrollingEdit_OnTextChanged(self, scrollFrame)
+	-- force an update when the text changes
+	self.handleCursorChange = true;
+	ScrollingEdit_OnUpdate(self, 0, scrollFrame);
+end
+
+function ScrollingEdit_OnLoad(self)
+	ScrollingEdit_SetCursorOffsets(self, 0, 0);
+end
+
+function ScrollingEdit_SetCursorOffsets(self, offset, height)
+	self.cursorOffset = offset;
+	self.cursorHeight = height;
+end
+
+function ScrollingEdit_OnCursorChanged(self, x, y, w, h)
+	ScrollingEdit_SetCursorOffsets(self, y, h);
+	self.handleCursorChange = true;
+end
 
 NumericInputSpinnerMixin = {};
 
@@ -840,4 +859,55 @@ function NumericInputSpinnerMixin:OnUpdate(elapsed)
 		local nextUpdateDelta = Lerp(MAX_TIME_BETWEEN_CHANGES_SEC, MIN_TIME_BETWEEN_CHANGES_SEC, Saturate(totalElapsed / TIME_TO_REACH_MAX_SEC));
 		self.nextUpdate = self.nextUpdate + nextUpdateDelta;
 	end
+end
+
+MaximizeMinimizeButtonFrameMixin = {};
+
+function MaximizeMinimizeButtonFrameMixin:OnShow()
+	if self.cvar then
+		local minimized = GetCVarBool(self.cvar);
+		if minimized then
+			self:Minimize();
+		else
+			self:Maximize();
+		end
+	end
+end
+
+function MaximizeMinimizeButtonFrameMixin:SetMinimizedCVar(cvar)
+	self.cvar = cvar;
+end
+
+function MaximizeMinimizeButtonFrameMixin:SetOnMaximizedCallback(maximizedCallback)
+	self.maximizedCallback = maximizedCallback;
+end
+
+function MaximizeMinimizeButtonFrameMixin:Maximize()
+	if self.maximizedCallback then
+		self.maximizedCallback(self);
+	end
+
+	if self.cvar then
+		SetCVar(self.cvar, 0);
+	end
+	
+	self.MaximizeButton:Hide();
+	self.MinimizeButton:Show();
+end
+
+function MaximizeMinimizeButtonFrameMixin:SetOnMinimizedCallback(minimizedCallback)
+	self.minimizedCallback = minimizedCallback;
+end
+
+function MaximizeMinimizeButtonFrameMixin:Minimize()
+	if self.minimizedCallback then
+		self.minimizedCallback(self);
+	end
+	
+	if self.cvar then
+		SetCVar(self.cvar, 1);
+	end
+	
+	self.MaximizeButton:Show();
+	self.MinimizeButton:Hide();
 end

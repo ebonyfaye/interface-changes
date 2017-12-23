@@ -48,6 +48,21 @@ local function take(name)
 	_G[name] = nil;
 end
 
+-- We create the "Enum" table directly in contents because we dont want the reference from _G in the secure environment
+local function retainenum(name)
+	if (not contents["Enum"]) then
+		contents["Enum"] = {};
+	end
+	contents["Enum"][name] = copyTable(_G.Enum[name]);
+end
+
+local function takeenum(name)
+	if (not contents["Enum"]) then
+		contents["Enum"] = {};
+	end
+	contents["Enum"][name] = _G.Enum[name];
+	_G.Enum[name] = nil;
+end
 
 -------------------------------
 --Things we actually want to save
@@ -57,17 +72,16 @@ end
 
 --For store
 if ( IsGMClient() ) then
-	retain("C_StoreSecure");
 	retain("HideGMOnly");
-else
-	take("C_StoreSecure");
 end
+take("C_StoreSecure");
 take("CreateForbiddenFrame");
 retain("IsGMClient");
 retain("IsOnGlueScreen");
 retain("math");
 retain("table");
 retain("string");
+retain("bit");
 retain("pairs");
 retain("ipairs");
 retain("next");
@@ -81,6 +95,7 @@ retain("type");
 retain("wipe");
 retain("error");
 retain("assert");
+retain("strtrim");
 retain("LoadURLIndex");
 retain("GetContainerNumFreeSlots");
 retain("GetCursorPosition");
@@ -112,6 +127,12 @@ retain("Vector3D_Add");
 retain("Vector3D_ScaleBy");
 retain("Vector3D_CalculateNormalFromYawPitch");
 retain("DeltaLerp");
+retain("SOUNDKIT");
+retain("GetScreenWidth");
+retain("GetScreenHeight");
+retain("GetPhysicalScreenSize");
+retain("ConvertPixelsToUI");
+retain("IsTrialAccount");
 
 --For auth challenge
 take("C_AuthChallenge");
@@ -128,6 +149,9 @@ take("C_SecureTransfer");
 --GlobalStrings
 retain("BLIZZARD_STORE");
 retain("ACCEPT");
+retain("HTML_START");
+retain("HTML_START_CENTERED");
+retain("HTML_END");
 take("BLIZZARD_STORE_ON_SALE");
 take("BLIZZARD_STORE_BUY");
 take("BLIZZARD_STORE_BUY_EUR");
@@ -176,6 +200,9 @@ take("BLIZZARD_STORE_CURRENCY_FORMAT_BRL");
 take("BLIZZARD_STORE_CURRENCY_FORMAT_ARS");
 take("BLIZZARD_STORE_CURRENCY_FORMAT_CLP");
 take("BLIZZARD_STORE_CURRENCY_FORMAT_AUD");
+take("BLIZZARD_STORE_CURRENCY_FORMAT_JPY");
+take("BLIZZARD_STORE_CURRENCY_FORMAT_CAD");
+take("BLIZZARD_STORE_CURRENCY_FORMAT_NZD");
 take("BLIZZARD_STORE_CURRENCY_RAW_ASTERISK");
 take("BLIZZARD_STORE_CURRENCY_BETA");
 take("BLIZZARD_STORE_BROWSE_BATTLE_COINS_KR");
@@ -193,7 +220,7 @@ take("BLIZZARD_STORE_ERROR_MESSAGE_PAYMENT");
 take("BLIZZARD_STORE_ERROR_TITLE_BATTLEPAY_DISABLED");
 take("BLIZZARD_STORE_ERROR_MESSAGE_BATTLEPAY_DISABLED");
 take("BLIZZARD_STORE_SECOND_CHANCE_KR");
-take("BLIZZARD_STORE_LICENSE_ACK_TEXT");
+take("BLIZZARD_STORE_LICENSE_ACK_TEXT_KRW");
 take("BLIZZARD_STORE_LICENSE_ACK_TEXT_CN");
 take("BLIZZARD_STORE_LICENSE_ACK_TEXT_TW");
 take("BLIZZARD_STORE_LICENSE_ACK_TEXT_USD");
@@ -205,6 +232,9 @@ take("BLIZZARD_STORE_LICENSE_ACK_TEXT_CLP");
 take("BLIZZARD_STORE_LICENSE_ACK_TEXT_MXN");
 take("BLIZZARD_STORE_LICENSE_ACK_TEXT_BRL");
 take("BLIZZARD_STORE_LICENSE_ACK_TEXT_AUD");
+take("BLIZZARD_STORE_LICENSE_ACK_TEXT_JPY");
+take("BLIZZARD_STORE_LICENSE_ACK_TEXT_CAD");
+take("BLIZZARD_STORE_LICENSE_ACK_TEXT_NZD");
 take("BLIZZARD_STORE_REGION_LOCKED");
 take("BLIZZARD_STORE_REGION_LOCKED_SUBTEXT");
 take("BLIZZARD_STORE_ERROR_TITLE_INSUFFICIENT_BALANCE");
@@ -278,8 +308,16 @@ take("BLIZZARD_STORE_VAS_ERROR_RACE_CLASS_COMBO_INELIGIBLE");
 take("BLIZZARD_STORE_VAS_ERROR_INELIGIBLE_MAP_ID");
 take("BLIZZARD_STORE_VAS_ERROR_BATTLEPAY_DELIVERY_PENDING");
 take("BLIZZARD_STORE_VAS_ERROR_HAS_WOW_TOKEN");
+take("BLIZZARD_STORE_VAS_ERROR_HAS_HEIRLOOM");
 take("BLIZZARD_STORE_VAS_ERROR_CHARACTER_LOCKED");
 take("BLIZZARD_STORE_VAS_ERROR_LAST_SAVE_TOO_RECENT");
+take("BLIZZARD_STORE_VAS_ERROR_INVALID_DESTINATION_ACCOUNT");
+take("BLIZZARD_STORE_VAS_ERROR_INVALID_SOURCE_ACCOUNT");
+take("BLIZZARD_STORE_VAS_ERROR_DISALLOWED_SOURCE_ACCOUNT");
+take("BLIZZARD_STORE_VAS_ERROR_DISALLOWED_DESTINATION_ACCOUNT");
+take("BLIZZARD_STORE_VAS_ERROR_LOWER_BOX_LEVEL");
+take("BLIZZARD_STORE_VAS_ERROR_MAX_CHARACTERS_ON_SERVER");
+take("BLIZZARD_STORE_VAS_ERROR_BOOSTED_TOO_RECENTLY");
 take("BLIZZARD_STORE_VAS_ERROR_OTHER");
 take("BLIZZARD_STORE_VAS_ERROR_LABEL");
 take("BLIZZARD_STORE_DISCLAIMER_FACTION_CHANGE");
@@ -293,12 +331,15 @@ take("BLIZZARD_STORE_DISCLAIMER_NAME_CHANGE_CN");
 take("BLIZZARD_STORE_DISCLAIMER_CHARACTER_TRANSFER");
 take("BLIZZARD_STORE_DISCLAIMER_CHARACTER_TRANSFER_CN");
 take("BLIZZARD_STORE_BOOST_UNREVOKED_CONSUMPTION");
+take("BLIZZARD_STORE_DISCLAIMER_BOOST_TOKEN_100");
+take("BLIZZARD_STORE_DISCLAIMER_BOOST_TOKEN_100_CN");
+take("STORE_CATEGORY_TRIAL_DISABLED_TOOLTIP");
+take("BLIZZARD_STORE_BUNDLE_DISCOUNT_BANNER");
+take("BLIZZARD_STORE_BUNDLE_DISCOUNT_TOOLTIP_ADDENDUM");
+take("BLIZZARD_STORE_BUNDLE_DISCOUNT_TOOLTIP_REPLACEMENT");
+
 
 -- For Battle.net Token
-if ( IsGMClient() ) then
-	C_WowTokenFakeSecure = C_WowTokenSecure;
-	retain("C_WowTokenFake")
-end
 take("C_WowTokenSecure");
 retain("C_WowTokenPublic");
 take("TOKEN_REDEEM_LABEL");
@@ -386,55 +427,53 @@ take("SEND_MONEY_TO_STRANGER_WARNING");
 take("TRADE_ACCEPT_CONFIRMATION");
 
 --Lua enums
-take("LE_STORE_ERROR_INVALID_PAYMENT_METHOD");
-take("LE_STORE_ERROR_PAYMENT_FAILED");
-take("LE_STORE_ERROR_WRONG_CURRENCY");
-take("LE_STORE_ERROR_BATTLEPAY_DISABLED");
-take("LE_STORE_ERROR_INSUFFICIENT_BALANCE");
-take("LE_STORE_ERROR_OTHER");
-take("LE_STORE_ERROR_ALREADY_OWNED");
-take("LE_STORE_ERROR_PARENTAL_CONTROLS_NO_PURCHASE");
-take("LE_STORE_ERROR_PURCHASE_DENIED");
-take("LE_STORE_ERROR_CONSUMABLE_TOKEN_OWNED");
-take("LE_STORE_ERROR_TOO_MANY_TOKENS");
-take("LE_STORE_ERROR_ITEM_UNAVAILABLE");
-take("LE_VAS_SERVICE_NAME_CHANGE");
-take("LE_VAS_SERVICE_APPEARANCE_CHANGE");
-take("LE_VAS_SERVICE_FACTION_CHANGE");
-take("LE_VAS_SERVICE_RACE_CHANGE");
-take("LE_VAS_SERVICE_CHARACTER_TRANSFER");
-take("LE_VAS_ERROR_REALM_NOT_ELIGIBLE");
-take("LE_VAS_ERROR_CANNOT_MOVE_GUILDMASTER");
-take("LE_VAS_ERROR_DUPLICATE_CHARACTER_NAME");
-take("LE_VAS_ERROR_HAS_MAIL");
-take("LE_VAS_ERROR_UNDER_MIN_LEVEL_REQ");
-take("LE_VAS_ERROR_TOO_MUCH_MONEY_FOR_LEVEL");
-take("LE_VAS_ERROR_HAS_AUCTIONS");
-take("LE_VAS_ERROR_NAME_NOT_AVAILABLE");
-take("LE_VAS_ERROR_LAST_RENAME_TOO_RECENT");
-take("LE_VAS_ERROR_CUSTOMIZE_ALREADY_REQUESTED");
-take("LE_VAS_ERROR_LAST_CUSTOMIZE_TOO_RECENT");
-take("LE_VAS_ERROR_FACTION_CHANGE_TOO_SOON");
-take("LE_VAS_ERROR_RACE_CLASS_COMBO_INELIGIBLE");
-take("LE_VAS_ERROR_INELIGIBLE_MAP_ID");
-take("LE_VAS_ERROR_BATTLEPAY_DELIVERY_PENDING");
-take("LE_VAS_ERROR_HAS_WOW_TOKEN");
-take("LE_VAS_ERROR_CHAR_LOCKED");
-take("LE_VAS_ERROR_LAST_SAVE_TOO_RECENT");
 retain("LE_TOKEN_RESULT_SUCCESS");
 retain("LE_TOKEN_RESULT_ERROR_OTHER");
 retain("LE_TOKEN_RESULT_ERROR_DISABLED");
 take("LE_TOKEN_RESULT_ERROR_BALANCE_NEAR_CAP");
 take("LE_TOKEN_REDEEM_TYPE_GAME_TIME");
 take("LE_TOKEN_REDEEM_TYPE_BALANCE");
-take("LE_VAS_PURCHASE_STATE_INVALID");
-take("LE_VAS_PURCHASE_STATE_PRE_PURCHASE");
-take("LE_VAS_PURCHASE_STATE_PAYMENT_PENDING");
-take("LE_VAS_PURCHASE_STATE_APPLYING_LICENSE");
-take("LE_VAS_PURCHASE_STATE_READY");
-take("LE_VAS_PURCHASE_STATE_PROCESSING_FACTION_CHANGE");
-take("LE_VAS_PURCHASE_STATE_PROCESSING_COMPLETE");
-take("LE_BATTLEPAY_PRODUCT_ITEM_LEVEL_90_CHARACTER_UPGRADE");
-take("LE_BATTLEPAY_PRODUCT_ITEM_LEVEL_100_CHARACTER_UPGRADE");
-take("LE_BATTLEPAY_PRODUCT_ITEM_7_0_BOX_LEVEL");
 retain("LE_MODEL_BLEND_OPERATION_NONE");
+
+--Tag enums
+takeenum("StoreError");
+takeenum("VasError");
+takeenum("BattlepayBoostProduct");
+takeenum("BattlepayDisplayFlag");
+takeenum("BattlepayProductDecorator");
+takeenum("VasServiceType");
+takeenum("VasPurchaseState");
+takeenum("BattlepaySpecialProducts");
+takeenum("BattlepayProductGroupFlag");
+takeenum("BattlepayGroupDisplayType");
+
+-- Secure Mixins
+-- where ... are the mixins to mixin
+function SecureMixin(object, ...)
+	if ( not issecure() ) then
+		return;
+	end
+
+	for i = 1, select("#", ...) do
+		local mixin = select(i, ...);
+		for k, v in pairs(mixin) do
+			object[k] = v;
+		end
+	end
+
+	return object;
+end
+
+-- where ... are the mixins to mixin
+function CreateFromSecureMixins(...)
+	if ( not issecure() ) then
+		return;
+	end
+
+	return SecureMixin({}, ...)
+end
+
+take("SecureMixin");
+take("CreateFromSecureMixins");
+
+retain("ShrinkUntilTruncateFontStringMixin");

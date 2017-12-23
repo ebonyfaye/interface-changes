@@ -1,5 +1,5 @@
 # Do not delete the following line!
-## Interface: 70100
+## Interface: 70300
 
 ## add C namespace augmentations here
 ..\SharedXML\C_TimerAugment.lua
@@ -7,11 +7,15 @@
 ## add snippets independent of modules here
 ..\SharedXML\Util.lua
 ..\SharedXML\Pools.lua
+..\SharedXML\LoopingSoundEffect.lua
 ..\SharedXML\CircularBuffer.lua
 ..\SharedXML\FontableFrameMixin.lua
 ..\SharedXML\Vector2D.lua
 ..\SharedXML\Vector3D.lua
 ..\SharedXML\Spline.lua
+..\SharedXML\LayoutFrame.xml
+..\SharedXML\ManagedLayoutFrame.xml
+..\SharedXML\BulletPoint.xml
 MixinUtil.lua
 
 ## intrinsics
@@ -20,12 +24,14 @@ MixinUtil.lua
 ..\SharedXML\ModelSceneTemplates.xml
 ..\SharedXML\ModelSceneMixin.xml
 ..\SharedXML\ModelSceneActorMixin.xml
+..\SharedXML\FrameStack.lua
 
 AnimatedStatusBar.xml
 FlowContainer.lua
 FrameLocks.lua
 
 
+..\SharedXML\SoundKitConstants.lua
 Constants.lua
 Localization.xml
 Fonts.xml
@@ -33,8 +39,6 @@ FontStyles.xml
 
 
 ## add new modules below here
-
-BasicControls.xml
 WorldFrame.xml
 UIParent.xml
 QuestUtils.lua
@@ -45,6 +49,7 @@ MoneyFrame.xml
 MoneyInputFrame.lua
 MoneyInputFrame.xml
 ..\SharedXML\SharedUIPanelTemplates.xml
+..\SharedXML\SharedBasicControls.xml
 GameTooltip.xml
 UIMenu.xml
 UIDropDownMenu.xml
@@ -172,7 +177,6 @@ TalentFrameTemplates.xml
 ClassPowerBar.xml
 RuneFrame.xml
 ShardBar.xml
-EclipseBarFrame.xml
 ComboFramePlayer.xml
 InsanityBar.xml
 EasyMenu.lua
@@ -216,7 +220,6 @@ ZoneAbility.xml
 ArtifactToasts.xml
 ..\SharedXML\ModelPreviewFrame.xml
 SplashFrame.xml
-..\SharedXML\LayoutFrame.xml
 
 #Save off whatever we need available unmodified.
 SecureCapsule.lua

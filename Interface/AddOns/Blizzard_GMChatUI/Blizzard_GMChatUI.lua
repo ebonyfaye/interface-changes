@@ -80,7 +80,7 @@ function GMChatFrame_OnEvent(self, event, ...)
 			GMChatStatusFrame:Show();
 			GMChatStatusFrame.pulse:Play();
 			table.insert(self.lastGM,arg2);
-			PlaySound("GM_ChatWarning");
+			PlaySound(SOUNDKIT.GM_CHAT_WARNING);
 
 			DEFAULT_CHAT_FRAME:AddMessage(pflag.."|HGMChat|h["..GM_CHAT_STATUS_READY_DESCRIPTION.."]|h", info.r, info.g, info.b, info.id);
 			DEFAULT_CHAT_FRAME:SetHyperlinksEnabled(true);
@@ -146,6 +146,11 @@ function GMChatFrame_OnShow(self)
 		SetCVar("lastTalkedToGM", self.lastGMForCVar);
 		GMChatFrameEditBox:SetAttribute("tellTarget", self.lastGMForCVar);
 		GMChatFrameEditBox:SetAttribute("chatType", "WHISPER");
+	end
+
+	if ( GetCVarBool("chatMouseScroll") ) then
+		GMChatFrame:SetScript("OnMouseWheel", FloatingChatFrame_OnMouseScroll);
+		GMChatFrame:EnableMouseWheel(true);
 	end
 
 	self:SetScript("OnUpdate", GMChatFrame_OnUpdate);

@@ -38,7 +38,11 @@ StaticPopupDialogs["NOT_ENOUGH_POWER_ARTIFACT_RESPEC"] = {
 }
 
 function ArtifactUI_CanViewArtifact()
-	return C_ArtifactUI.IsAtForge() or C_ArtifactUI.GetTotalPurchasedRanks() > 0 or C_ArtifactUI.GetNumObtainedArtifacts() > 1;
+	return C_ArtifactUI.IsAtForge() or ArtifactUI_HasPurchasedAnything() or C_ArtifactUI.GetNumObtainedArtifacts() > 1;
+end
+
+function ArtifactUI_HasPurchasedAnything()
+	return C_ArtifactUI.GetTotalPurchasedRanks() > 0 or C_ArtifactUI.IsMaxedByRulesOrEffect();
 end
 
 local TAB_PERKS = 1;
@@ -64,7 +68,7 @@ function ArtifactUIMixin:OnLoad()
 end
 
 function ArtifactUIMixin:OnShow()
-	PlaySound("igCharacterInfoOpen");
+	PlaySound(SOUNDKIT.IG_CHARACTER_INFO_OPEN);
 
 	if self.queueTier2UpgradeAnim then
 		self.queueTier2UpgradeAnim = nil;
@@ -74,7 +78,7 @@ function ArtifactUIMixin:OnShow()
 	self:EvaulateForgeState();
 	self:SetupPerArtifactData();
 	self:RefreshKnowledgeRanks();
-	self.PerksTab:Refresh(true);
+	self.PerksTab:OnUIOpened();
 	
 	self:RegisterEvent("ARTIFACT_XP_UPDATE");
 	self:RegisterEvent("ARTIFACT_RELIC_INFO_RECEIVED");
@@ -84,7 +88,7 @@ end
 
 function ArtifactUIMixin:OnHide()
 	ArtifactFrameUnderlay:Hide();
-	PlaySound("igCharacterInfoClose");
+	PlaySound(SOUNDKIT.IG_CHARACTER_INFO_CLOSE);
 	C_ArtifactUI.Clear();
 
 	StaticPopup_Hide("CONFIRM_ARTIFACT_RESPEC");
@@ -109,7 +113,7 @@ function ArtifactUIMixin:OnEvent(event, ...)
 				self:SetupPerArtifactData();
 			end
 			self.PerksTab:Refresh(newItem);
-		else
+		elseif ( not C_ArtifactRelicForgeUI.IsAtForge() ) then
 			ShowUIPanel(self);
 		end
 	elseif event == "ARTIFACT_XP_UPDATE" then
@@ -120,18 +124,6 @@ function ArtifactUIMixin:OnEvent(event, ...)
 		self.PerksTab:Refresh(false);
 	elseif event == "UI_SCALE_CHANGED" or event == "DISPLAY_SIZE_CHANGED" then
 		self.PerksTab:Refresh(true);
-	end
-end
-
-function ArtifactUIMixin:OnTierChanged(newTier, bagOrInventorySlot, slot)
-	if newTier == 2 then
-		self.queueTier2UpgradeAnim = true;
-		HideUIPanel(self);
-		if slot then
-			SocketContainerItem(bagOrInventorySlot, slot);
-		else
-			SocketInventoryItem(bagOrInventorySlot);
-		end
 	end
 end
 
@@ -206,7 +198,7 @@ function ArtifactUIMixin:SetTab(id)
 end
 
 function ArtifactUIMixin:SetupPerArtifactData()
-	local itemID, altItemID, name, icon, xp, pointsSpent, quality, artifactAppearanceID, appearanceModID, itemAppearanceID, altItemAppearanceID, altOnTop, artifactMaxed, tier = C_ArtifactUI.GetArtifactInfo()
+	local _, _, _, icon = C_ArtifactUI.GetArtifactInfo();
 	if icon then
 		self.ForgeBadgeFrame.ItemIcon:SetTexture(icon);
 	end
@@ -254,7 +246,8 @@ end
 function ArtifactUIMixin:OnKnowledgeEnter(knowledgeFrame)
 	GameTooltip:SetOwner(knowledgeFrame, "ANCHOR_BOTTOMRIGHT", -25, 27);
 	local artifactArtInfo = C_ArtifactUI.GetArtifactArtInfo();
-	GameTooltip:SetText(artifactArtInfo.titleName, artifactArtInfo.titleColor:GetRGB());
+	local color = ITEM_QUALITY_COLORS[LE_ITEM_QUALITY_ARTIFACT];
+	GameTooltip:SetText(artifactArtInfo.titleName, color.r, color.g, color.b);
 
 	GameTooltip:AddLine(ARTIFACTS_NUM_PURCHASED_RANKS:format(C_ArtifactUI.GetTotalPurchasedRanks()), HIGHLIGHT_FONT_COLOR:GetRGB());
 
@@ -295,7 +288,7 @@ function ArtifactUIMixin:OnInventoryItemMouseLeave(bag, slot)
 	local itemLink = itemInfo[7];
 	local itemID = itemInfo[10];
 
-	if itemID and IsArtifactRelicItem(itemID) and not CursorHasItem() then
+	if itemID and IsArtifactRelicItem(itemID) and not CursorHasItem() and self.PerksTab:IsVisible() then
 		self.PerksTab:HideHighlightForRelicItemID(itemID, itemLink);
 		self.PerksTab.TitleContainer:RefreshRelicHighlights();
 	end

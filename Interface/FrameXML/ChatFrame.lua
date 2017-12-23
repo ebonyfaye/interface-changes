@@ -776,9 +776,11 @@ local function CastSequenceManager_OnEvent(self, event, ...)
 			name, rank = strlower(name), strlower(rank);
 			local nameplus = name.."()";
 			local fullname = name.."("..rank..")";
+			local overrideName = strlower(FindSpellOverrideNameByName(name));
+			local baseName = strlower(FindBaseSpellNameByName(name));
 			for sequence, entry in pairs(CastSequenceTable) do
 				local entryName = entry.spellNames[entry.index];
-				if ( entryName == name or entryName == nameplus or entryName == fullname ) then
+				if ( entryName == name or entryName == nameplus or entryName == fullname or entryName == overrideName or entryName == baseName ) then
 					if ( event == "UNIT_SPELLCAST_SENT" ) then
 						entry.pending = castID;
 					elseif ( entry.pending == castID ) then
@@ -920,7 +922,7 @@ function QueryCastSequence(sequence)
 				spells = sequence;
 			end
 			local action = strlower(strtrim((strsplit(",", spells))));
-			if ( GetItemInfo(action) or select(3, SecureCmdItemParse(action)) ) then
+			if ( select(3, SecureCmdItemParse(action)) or GetItemInfo(action) ) then
 				item, spell = action, strlower(GetItemSpell(action) or "");
 			else
 				item, spell = nil, action;
@@ -1545,13 +1547,13 @@ end
 
 SecureCmdList["RANDOMPET"] = function(msg)
 	if ( SecureCmdOptionParse(msg) ) then
-		C_PetJournal.SummonRandomPet(true);
+		C_PetJournal.SummonRandomPet(false);
 	end
 end
 
 SecureCmdList["RANDOMFAVORITEPET"] = function(msg)
 	if ( SecureCmdOptionParse(msg) ) then
-		C_PetJournal.SummonRandomPet(false);
+		C_PetJournal.SummonRandomPet(true);
 	end
 end
 
@@ -1595,6 +1597,7 @@ end
 SlashCmdList = { };
 
 SlashCmdList["CONSOLE"] = function(msg)
+	forceinsecure();
 	ConsoleExec(msg);
 end
 
@@ -2289,21 +2292,46 @@ end
 
 SlashCmdList["FRAMESTACK"] = function(msg)
 	UIParentLoadAddOn("Blizzard_DebugTools");
-	local showHiddenArg, showRegionsArg = strmatch(msg, "^%s*(%S+)%s+(%S+)%s*$");
-	if ( not showHiddenArg or not showRegionsArg ) then
-		showHiddenArg = strmatch(msg, "^%s*(%S+)%s*$");
-		showRegionsArg = "1";
-	end
-	local showHidden = showHiddenArg == "true" or showHiddenArg == "1";
-	local showRegions = showRegions == "true" or showRegionsArg == "1";
 
-	FrameStackTooltip_Toggle(showHidden, showRegions);
+	local showHiddenArg, showRegionsArg, showAnchorsArg;
+
+	showHiddenArg, msg = string.match(msg or "", "^%s*(%S+)(.*)$");
+	showRegionsArg, msg = string.match(msg or "", "^%s*(%S+)(.*)$");
+	showAnchorsArg, msg =  string.match(msg or "", "^%s*(%S+)(.*)$");
+
+	local showHidden = StringToBoolean(showHiddenArg or "", false);
+	local showRegions = StringToBoolean(showRegionsArg or "", true);
+	local showAnchors = StringToBoolean(showAnchorsArg or "", true);
+
+	FrameStackTooltip_Toggle(showHidden, showRegions, showAnchors);
 end
 
 SlashCmdList["EVENTTRACE"] = function(msg)
 	UIParentLoadAddOn("Blizzard_DebugTools");
 	EventTraceFrame_HandleSlashCmd(msg);
 end
+
+SlashCmdList["TABLEINSPECT"] = function(msg)
+	UIParentLoadAddOn("Blizzard_DebugTools");
+	
+	local focusedTable = nil;
+	if msg ~= "" and msg ~= " " then
+		local focusedFunction = loadstring(("return %s"):format(msg));
+		focusedTable = focusedFunction and focusedFunction();
+	end
+	
+	if focusedTable and type(focusedTable) == "table" then
+		DisplayTableInspectorWindow(focusedTable);
+	else
+		local highlightFrame = FrameStackTooltip:SetFrameStack();
+		if highlightFrame then
+			DisplayTableInspectorWindow(highlightFrame);
+		else
+			DisplayTableInspectorWindow(UIParent);
+		end
+	end
+end
+
 
 SlashCmdList["DUMP"] = function(msg)
 	if (not IsKioskModeEnabled() and not ScriptsDisallowedForBeta()) then
@@ -2317,10 +2345,8 @@ SlashCmdList["DUMP"] = function(msg)
 end
 
 SlashCmdList["RELOAD"] = function(msg)
-	ConsoleExec("reloadui");
+	ReloadUI();
 end
-
-
 
 SlashCmdList["WARGAME"] = function(msg)
 	-- Parameters are (playername, area, isTournamentMode). Since the player name can be multiple words,
@@ -2334,11 +2360,11 @@ SlashCmdList["SPECTATOR_WARGAME"] = function(msg)
 		return;
 	end
 
-	local bnetIDGameAccount1 = BNet_GetBNetIDGameAccount(target1) or BNet_GetBNetIDAccount(target1);
+	local bnetIDGameAccount1 = BNet_GetBNetIDAccountFromCharacterName(target1) or BNet_GetBNetIDAccount(target1);
 	if not bnetIDGameAccount1 then
 		ConsolePrint("Failed to find StartSpectatorWarGame target1:", target1);
 	end
-	local bnetIDGameAccount2 = BNet_GetBNetIDGameAccount(target2) or BNet_GetBNetIDAccount(target2);
+	local bnetIDGameAccount2 = BNet_GetBNetIDAccountFromCharacterName(target2) or BNet_GetBNetIDAccount(target2);
 	if not bnetIDGameAccount2 then
 		ConsolePrint("Failed to find StartSpectatorWarGame target2:", target2);
 	end
@@ -2385,6 +2411,82 @@ SlashCmdList["API"] = function(msg)
 	APIDocumentation:HandleSlashCommand(msg);
 end
 
+SlashCmdList["COMMENTATOR_OVERRIDE"] = function(msg)
+	if not IsAddOnLoaded("Blizzard_Commentator") then
+		return;
+	end
+	
+	local originalName, overrideName = msg:match("^(%S-)%s+(.+)");
+	if not originalName or not overrideName then
+		DEFAULT_CHAT_FRAME:AddMessage(ERROR_SLASH_COMMENTATOROVERRIDE, YELLOW_FONT_COLOR.r, YELLOW_FONT_COLOR.g, YELLOW_FONT_COLOR.b);
+		DEFAULT_CHAT_FRAME:AddMessage(ERROR_SLASH_COMMENTATOROVERRIDE_EXAMPLE, YELLOW_FONT_COLOR.r, YELLOW_FONT_COLOR.g, YELLOW_FONT_COLOR.b);
+		return;
+	end
+
+	originalName = originalName:sub(1, 1):upper() .. originalName:sub(2, -1);
+	
+	DEFAULT_CHAT_FRAME:AddMessage((SLASH_COMMENTATOROVERRIDE_SUCCESS):format(originalName, overrideName), YELLOW_FONT_COLOR.r, YELLOW_FONT_COLOR.g, YELLOW_FONT_COLOR.b);
+	
+	C_Commentator.AddPlayerOverrideName(originalName, overrideName);
+	
+	-- Also add character name without the realm if we got CharacterName-Realm.
+	-- Prepend possible realm separators with % so they are matched literally
+	local realmSeparateMatchList = string.gsub(REALM_SEPARATORS, ".", "%%%1");
+	local characterName = string.match(originalName, "(..-)["..realmSeparateMatchList.."].");
+	if characterName and characterName ~= originalName then
+		DEFAULT_CHAT_FRAME:AddMessage((SLASH_COMMENTATOROVERRIDE_SUCCESS):format(characterName, overrideName), YELLOW_FONT_COLOR.r, YELLOW_FONT_COLOR.g, YELLOW_FONT_COLOR.b);
+		C_Commentator.AddPlayerOverrideName(characterName, overrideName);
+	end
+end
+
+SlashCmdList["COMMENTATOR_NAMETEAM"] = function(msg)
+	if not IsAddOnLoaded("Blizzard_Commentator") then
+		return;
+	end
+	
+	local teamIndex, teamName = msg:match("^(%d+) (.+)");
+	teamIndex = tonumber(teamIndex);
+	
+	if not teamIndex or not teamName then
+		DEFAULT_CHAT_FRAME:AddMessage(ERROR_SLASH_COMMENTATOR_NAMETEAM, YELLOW_FONT_COLOR.r, YELLOW_FONT_COLOR.g, YELLOW_FONT_COLOR.b);
+		DEFAULT_CHAT_FRAME:AddMessage(ERROR_SLASH_COMMENTATOR_NAMETEAM_EXAMPLE, YELLOW_FONT_COLOR.r, YELLOW_FONT_COLOR.g, YELLOW_FONT_COLOR.b);
+		return;
+	end
+		
+	if not C_Commentator.IsSpectating() then
+		DEFAULT_CHAT_FRAME:AddMessage(CONTEXT_ERROR_SLASH_COMMENTATOR_NAMETEAM, YELLOW_FONT_COLOR.r, YELLOW_FONT_COLOR.g, YELLOW_FONT_COLOR.b);
+		return;
+	else
+		DEFAULT_CHAT_FRAME:AddMessage((SLASH_COMMENTATOR_NAMETEAM_SUCCESS):format(teamIndex, teamName), YELLOW_FONT_COLOR.r, YELLOW_FONT_COLOR.g, YELLOW_FONT_COLOR.b);
+	end
+	
+	CommentatorTeamDisplay:UpdateTeamName(teamIndex, teamName);
+end
+
+SlashCmdList["COMMENTATOR_ASSIGNPLAYER"] = function(msg)
+	if not IsAddOnLoaded("Blizzard_Commentator") then
+		return;
+	end
+	
+	local playerName, teamName = msg:match("^(%S-)%s+(.+)");
+	if not playerName or not teamName then
+		DEFAULT_CHAT_FRAME:AddMessage(ERROR_SLASH_COMMENTATOR_ASSIGNPLAYER, YELLOW_FONT_COLOR.r, YELLOW_FONT_COLOR.g, YELLOW_FONT_COLOR.b);
+		DEFAULT_CHAT_FRAME:AddMessage(ERROR_SLASH_COMMENTATOR_ASSIGNPLAYER_EXAMPLE, YELLOW_FONT_COLOR.r, YELLOW_FONT_COLOR.g, YELLOW_FONT_COLOR.b);
+		return;
+	end
+	
+	DEFAULT_CHAT_FRAME:AddMessage((SLASH_COMMENTATOR_ASSIGNPLAYER_SUCCESS):format(playerName, teamName), YELLOW_FONT_COLOR.r, YELLOW_FONT_COLOR.g, YELLOW_FONT_COLOR.b);
+	CommentatorTeamDisplay:AssignPlayerToTeam(playerName, teamName);
+end
+
+SlashCmdList["RESET_COMMENTATOR_SETTINGS"] = function(msg)
+	if not IsAddOnLoaded("Blizzard_Commentator") then
+		return;
+	end
+	
+	PvPCommentator:SetDefaultCommentatorSettings();
+end
+
 function ChatFrame_SetupListProxyTable(list)
 	if ( getmetatable(list) ) then
 		return;
@@ -2417,13 +2519,9 @@ end
 function ChatFrame_ImportEmoteTokensToHash()
 	-- Hook up per-faction emotes before we build the emote list hash.
 	local factionGroup = UnitFactionGroup("player");
-	EMOTE454_TOKEN = nil; -- "FORTHEALLIANCE"
-	EMOTE455_TOKEN = nil; -- "FORTHEHORDE"
 	if ( factionGroup == "Alliance" ) then
-		EMOTE454_TOKEN = "FORTHEALLIANCE";
 		TextEmoteSpeechList[#TextEmoteSpeechList + 1] = "FORTHEALLIANCE";
 	elseif ( factionGroup == "Horde" ) then
-		EMOTE455_TOKEN = "FORTHEHORDE";
 		TextEmoteSpeechList[#TextEmoteSpeechList + 1] = "FORTHEHORDE";
 	end
 
@@ -3059,6 +3157,10 @@ function ChatFrame_MessageEventHandler(self, event, ...)
 			if ( not globalstring ) then
 				globalstring = _G["CHAT_"..arg1.."_NOTICE"];
 			end
+			if not globalstring then
+				GMError(("Missing global string for %q"):format("CHAT_"..arg1.."_NOTICE_BN"));
+				return;
+			end
 			if(arg5 ~= "") then
 				-- TWO users in this notice (E.G. x kicked y)
 				self:AddMessage(format(globalstring, arg8, arg4, arg2, arg5), info.r, info.g, info.b, info.id);
@@ -3071,12 +3173,17 @@ function ChatFrame_MessageEventHandler(self, event, ...)
 				self:AddMessage(CHAT_MSG_BLOCK_CHAT_CHANNEL_INVITE, info.r, info.g, info.b, info.id);
 			end
 		elseif (type == "CHANNEL_NOTICE") then
-			local globalstring = _G["CHAT_"..arg1.."_NOTICE_BN"];
+			local globalstring;
 			if( arg1 == "TRIAL_RESTRICTED" ) then
 				globalstring = CHAT_TRIAL_RESTRICTED_NOTICE_TRIAL;
 			else
+				globalstring = _G["CHAT_"..arg1.."_NOTICE_BN"];
 				if ( not globalstring ) then
 					globalstring = _G["CHAT_"..arg1.."_NOTICE"];
+					if not globalstring then
+						GMError(("Missing global string for %q"):format("CHAT_"..arg1.."_NOTICE"));
+						return;
+					end
 				end
 			end
 			local accessID = ChatHistory_GetAccessID(Chat_GetChatCategory(type), arg8);
@@ -3084,6 +3191,10 @@ function ChatFrame_MessageEventHandler(self, event, ...)
 			self:AddMessage(format(globalstring, arg8, arg4), info.r, info.g, info.b, info.id, accessID, typeID);
 		elseif ( type == "BN_INLINE_TOAST_ALERT" ) then
 			local globalstring = _G["BN_INLINE_TOAST_"..arg1];
+			if not globalstring then
+				GMError(("Missing global string for %q"):format("BN_INLINE_TOAST_"..arg1));
+				return;
+			end
 			local message;
 			if ( arg1 == "FRIEND_REQUEST" ) then
 				message = globalstring;
@@ -3192,6 +3303,10 @@ function ChatFrame_MessageEventHandler(self, event, ...)
 
 			local playerLink;
 			local playerLinkDisplayText = coloredName;
+			local relevantDefaultLanguage = self.defaultLanguage;
+			if ( (type == "SAY") or (type == "YELL") ) then
+				relevantDefaultLanguage = self.alternativeDefaultLanguage;
+			end
 			local usingDifferentLanguage = (arg3 ~= "") and (arg3 ~= relevantDefaultLanguage);
 			local usingEmote = (type == "EMOTE") or (type == "TEXT_EMOTE");
 
@@ -3210,10 +3325,6 @@ function ChatFrame_MessageEventHandler(self, event, ...)
 				message = ChatFrame_GetMobileEmbeddedTexture(info.r, info.g, info.b)..message;
 			end
 
-			local relevantDefaultLanguage = self.defaultLanguage;
-			if ( (type == "SAY") or (type == "YELL") ) then
-				relevantDefaultLanguage = self.alternativeDefaultLanguage;
-			end
 			if ( usingDifferentLanguage ) then
 				local languageHeader = "["..arg3.."] ";
 				if ( showLink and (arg2 ~= "") ) then
@@ -3261,7 +3372,7 @@ function ChatFrame_MessageEventHandler(self, event, ...)
 			--BN_WHISPER FIXME
 			ChatEdit_SetLastTellTarget(arg2, type);
 			if ( self.tellTimer and (GetTime() > self.tellTimer) ) then
-				PlaySound("TellMessage");
+				PlaySound(SOUNDKIT.TELL_MESSAGE);
 			end
 			self.tellTimer = GetTime() + CHAT_TELL_ALERT_TIME;
 			--FCF_FlashTab(self);
@@ -3365,11 +3476,12 @@ function ChatFrame_OnMouseWheel(value)
 	end
 end
 
-function ChatFrame_OpenChat(text, chatFrame)
+function ChatFrame_OpenChat(text, chatFrame, desiredCursorPosition)
 	local editBox = ChatEdit_ChooseBoxForSend(chatFrame);
 
 	ChatEdit_ActivateChat(editBox);
 	editBox.setText = 1;
+	editBox.desiredCursorPosition = desiredCursorPosition;
 	editBox.text = text;
 
 	if ( editBox:GetAttribute("chatType") == editBox:GetAttribute("stickyType") ) then
@@ -3664,6 +3776,11 @@ function ChatEdit_OnUpdate(self, elapsedSec)
 		self:SetText(self.text);
 		self.setText = 0;
 		ChatEdit_ParseText(self, 0, true);
+
+		if self.desiredCursorPosition then
+			self:SetCursorPosition(self.desiredCursorPosition);
+			self.desiredCursorPosition = nil;
+		end
 	end
 end
 
@@ -4639,7 +4756,17 @@ function LanguageMenu_OnLoad(self)
 end
 
 function VoiceMacroMenu_Click(self)
-	DoEmote(TextEmoteSpeechList[self:GetID()]);
+	local emote = TextEmoteSpeechList[self:GetID()];
+	if (emote == EMOTE454_TOKEN or emote == EMOTE455_TOKEN) then
+		local faction = UnitFactionGroup("player", true);
+		if (faction == "Alliance") then
+			emote = EMOTE454_TOKEN;
+		elseif (faction == "Horde") then
+			emote = EMOTE455_TOKEN;
+		end
+	end
+
+	DoEmote(emote);
 	ChatMenu:Hide();
 end
 

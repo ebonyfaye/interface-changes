@@ -5,7 +5,7 @@ local CURVED_LINE_RADIUS_SCALAR = 0.98;
 local CURVED_LINE_THICKNESS = 5;
 
 -- Indexed by artifact tier.
-local ARTIFACT_REVEAL_DELAY_SECS_PER_DISTANCE = { [1] = .005, [2] = .0025 };
+local ARTIFACT_REVEAL_DELAY_SECS_PER_DISTANCE = { [1] = .005, [2] = .00305 };
 local ARTIFACT_REVEAL_LINE_DURATION_SECS_PER_DISTANCE = .0019;
 
 -------------------- Animation Constants Start --------------------
@@ -21,28 +21,48 @@ local ARTIFACT_TIER_2_RUNE_FLASH_DELAY = 1.0;
 local ARTIFACT_TIER_2_CONSTELLATION_DELAY = 1.05;
 local ARTIFACT_TIER_2_FIRST_CURVED_LINE_DELAY = 0;
 local ARTIFACT_TIER_2_SECOND_CURVED_LINE_DELAY = 0.4;
-local ARTIFACT_TIER_2_CURVED_LINE_TICK_SPEED = 0.02;
-local ARTIFACT_TIER_2_CURVED_LINE_FADE_DELAY = 0.5;
+local ARTIFACT_TIER_2_THIRD_CURVED_LINE_DELAY = 0.7;
+local ARTIFACT_TIER_2_CURVED_LINE_TICK_SPEED = 0.035;
 
 -- The Tier 2 crest animates in with frame shake.
-local ARTIFACT_TIER_2_CREST_DELAY = 1.2;
-local ARTIFACT_TIER_2_SHAKE_DELAY = 0.35;
-local ARTIFACT_TIER_2_SHAKE_AMOUNT = 4;
+local ARTIFACT_TIER_2_CREST_DELAY = 1.55;
+local ARTIFACT_TIER_2_SHAKE_DELAY = 0.345;
+local ARTIFACT_TIER_2_SHAKE = { { x = 0, y = -30}, { x = 0, y = 30}, { x = 0, y = -30}, { x = 0, y = 30}, { x = -3, y = -1}, { x = 2, y = 2}, { x = -2, y = -3}, { x = -1, y = -1}, { x = 4, y = 2}, { x = 3, y = 4}, { x = -3, y = 4}, { x = 4, y = -4}, { x = -4, y = 2}, { x = -2, y = 1}, { x = -3, y = -1}, { x = 2, y = 2}, { x = -2, y = -3}, { x = -1, y = -1}, { x = 4, y = 2}, { x = 3, y = 4}, { x = -3, y = 4}, { x = 4, y = -4}, { x = -4, y = 2}, { x = -2, y = 1}, { x = -3, y = -1}, { x = 2, y = 2}, { x = -2, y = -3}, { x = -1, y = -1}, { x = 4, y = 2}, { x = 3, y = 4}, { x = -3, y = 4}, { x = 4, y = -4}, { x = -4, y = 2}, { x = -2, y = 1}, { x = -3, y = -1}, { x = 2, y = 2}, { x = -2, y = -3}, { x = -1, y = -1}, { x = 4, y = 2}, { x = 3, y = 4}, { x = -3, y = 4}, { x = 4, y = -4}, { x = -4, y = 2}, { x = -2, y = 1}, { x = -3, y = -1}, { x = 2, y = 2}, { x = -2, y = -3}, { x = -1, y = -1}, { x = 4, y = 2}, { x = 3, y = 4}, { x = -3, y = 4}, { x = 4, y = -4}, { x = -4, y = 2}, { x = -2, y = 1}, { x = -3, y = -1}, { x = 2, y = 2}, { x = -2, y = -3}, { x = -1, y = -1}, { x = 4, y = 2}, { x = 3, y = 4}, { x = -3, y = 4}, { x = 4, y = -4}, { x = -4, y = 2}, { x = -2, y = 1}, };
 local ARTIFACT_TIER_2_SHAKE_DURATION = 0.25;
 local ARTIFACT_TIER_2_SHAKE_FREQUENCY = 0.001;
 
+ARTIFACT_TIER_2_SOUND_REFUND_LOOP_START_DELAY = 0.3;
+ARTIFACT_TIER_2_SOUND_REFUND_END_DELAY = 0.9;
+ARTIFACT_TIER_2_SOUND_REFUND_LOOP_STOP_DELAY = 0.0;
+ARTIFACT_TIER_2_SOUND_REFUND_LOOP_FADE_OUT_TIME = 500;
+
 local TIER_2_FINAL_POWER_REVEAL_REVEAL_DELAY = 0.5;
-local TIER_2_FINAL_POWER_REVEAL_SHAKE_DELAY = 0.35;
-local TIER_2_FINAL_POWER_REVEAL_SHAKE_AMOUNT = 4;
+local TIER_2_FINAL_POWER_REVEAL_SHAKE_DELAY = 0.345;
+local TIER_2_FINAL_POWER_REVEAL_SHAKE = ARTIFACT_TIER_2_SHAKE;
 local TIER_2_FINAL_POWER_REVEAL_SHAKE_DURATION = 0.22;
 local TIER_2_FINAL_POWER_REVEAL_SHAKE_FREQUENCY = 0.001;
 
 local TIER_2_GLOW_TIME = 3.2;
+
+local TIER_2_FORGING_MODEL_SCENE_ID = 55;
+local TIER_2_FORGING_EFFECT_MODEL_ID = 382335;--"SPELLS\\EASTERN_PLAGUELANDS_BEAM_EFFECT.M2";
+
+local TIER_2_FORGE_EFFECT_FADE_IN_DELAY = 0;
+local TIER_2_BACKGROUND_FRONT_INTENSITY_IN_DELAY = 0;
+local TIER_2_BACKGROUND_FRONT_INTENSITY_IN_EFFECT = 0;
+local TIER_2_FORGE_EFFECT_FADE_OUT_DELAY = 0.5;
+local TIER_2_BACKGROUND_FRONT_INTENSITY_OUT_DELAY = 0.5;
+
+local TIER_2_SLAM_EFFECT_MODEL_SCENE_ID = 57;
+local TIER_2_SLAM_EFFECT_MODEL_ID = 1369310; --"SPELLS\\CFX_WARRIOR_THUNDERCLAP_CASTWORLD.M2"
+local TIER_2_SLAM_EFFECT_DELAY = 0.275;
+local TIER_2_SLAM_EFFECT_HIDE_DELAY = 0.5;
+
 -------------------- Animation Constants End --------------------
 
 function ArtifactPerksMixin:OnLoad()	
 	self.powerButtonPool = CreateFramePool("BUTTON", self, "ArtifactPowerButtonTemplate");
-	self.animationTimers = {};
+	self.callbackTimers = {};
 end
 
 function ArtifactPerksMixin:OnShow()	
@@ -66,6 +86,20 @@ function ArtifactPerksMixin:OnEvent(event, ...)
 	end
 end
 
+function ArtifactPerksMixin:OnUIOpened()
+	self.RelicTalentAlert:Hide();
+	for i, relicSlot in ipairs(self.TitleContainer.RelicSlots) do
+		local currentRank, canAddTalent = C_ArtifactUI.GetRelicSlotRankInfo(i);
+		if ( canAddTalent ) then
+			self.RelicTalentAlert:SetPoint("TOP", relicSlot, "BOTTOM", 0, -20);
+			self.RelicTalentAlert:Show();
+			break;
+		end
+	end
+
+	self:Refresh(true);
+end
+
 function ArtifactPerksMixin:OnAppearanceChanging()
 	self.isAppearanceChanging = true;
 end
@@ -82,7 +116,13 @@ function ArtifactPerksMixin:RefreshModel()
 		self.Model:SetItem(itemID, appearanceModID);
 	end
 
-	self.Model.BackgroundFront:SetAlpha(1.0 - (modelAlpha or 1.0));
+	local backgroundFrontTargetAlpha = 1.0 - (modelAlpha or 1.0);
+	self.Model.backgroundFrontTargetAlpha = backgroundFrontTargetAlpha;
+	self.Model.ForgingEffectAnimIn.Fade:SetFromAlpha(backgroundFrontTargetAlpha);
+	self.Model.ForgingEffectAnimIn.Fade:SetToAlpha(backgroundFrontTargetAlpha * TIER_2_BACKGROUND_FRONT_INTENSITY_IN_EFFECT);
+	self.Model.ForgingEffectAnimOut.Fade:SetFromAlpha(backgroundFrontTargetAlpha * TIER_2_BACKGROUND_FRONT_INTENSITY_IN_EFFECT);
+	self.Model.ForgingEffectAnimOut.Fade:SetToAlpha(backgroundFrontTargetAlpha);
+	self.Model.BackgroundFront:SetAlpha(backgroundFrontTargetAlpha);
 
 	self.Model:SetModelDrawLayer(altOnTop and "BORDER" or "ARTWORK");
 	self.AltModel:SetModelDrawLayer(altOnTop and "ARTWORK" or "BORDER");
@@ -111,8 +151,7 @@ function ArtifactsModelTemplate_OnModelLoaded(self)
 	end
 	self:SetLight(true, false, 0, 0, 0, .7, 1.0, 1.0, 1.0);
 	self:SetViewTranslation(-88, 0);
-	self:SetViewInsets(88, 88, 0, 0);
-				
+
 	self:SetDesaturation(self.desaturation or .5);
 
 	self:SetAnimation(animationSequence, 0);
@@ -126,6 +165,9 @@ function ArtifactPerksMixin:RefreshBackground()
 		local bgAtlas = ("%s-BG"):format(artifactArtInfo.textureKit);
 		self.BackgroundBack:SetAtlas(bgAtlas);
 		self.Model.BackgroundFront:SetAtlas(bgAtlas);
+		self.Tier2ForgingScene.BackgroundMiddle:SetAtlas(bgAtlas);
+		self.Tier2ForgingScene.BackgroundMiddle:Show();
+
 
 		local crestAtlas = ("%s-BG-Rune"):format(artifactArtInfo.textureKit);
 		self.CrestFrame.CrestRune1:SetAtlas(crestAtlas, true);
@@ -168,9 +210,8 @@ function ArtifactPerksMixin:GetFinalPowerButtonByTier(tier)
 end
 
 function ArtifactPerksMixin:RefreshPowers(newItem)
-	self.powerButtonPool:ReleaseAll();
-
 	if newItem or not self.powerIDToPowerButton then
+		self.powerButtonPool:ReleaseAll();
 		self.powerIDToPowerButton = {};
 	end
 
@@ -228,12 +269,12 @@ function ArtifactPerksMixin:RefreshFinalPowerForTier(tier, isUnlocked)
 				elseif tier == 2 then
 					self:CancelAllTimedAnimations();
 					finalTierButton:Hide();
-					self:StartAnimationWithDelay(TIER_2_FINAL_POWER_REVEAL_REVEAL_DELAY, function ()
+					self:StartWithDelay(TIER_2_FINAL_POWER_REVEAL_REVEAL_DELAY, function ()
 						finalTierButton:Show();
 						finalTierButton:PlayUnlockAnimation();
 						finalTierButton.Tier2FinalPowerSparks:Play();
-						self:StartAnimationWithDelay(TIER_2_FINAL_POWER_REVEAL_SHAKE_DELAY, function ()
-							ShakeFrameRandom(self:GetParent(), TIER_2_FINAL_POWER_REVEAL_SHAKE_AMOUNT, TIER_2_FINAL_POWER_REVEAL_SHAKE_DURATION, TIER_2_FINAL_POWER_REVEAL_SHAKE_FREQUENCY);
+						self:StartWithDelay(TIER_2_FINAL_POWER_REVEAL_SHAKE_DELAY, function ()
+							ShakeFrame(self:GetParent(), TIER_2_FINAL_POWER_REVEAL_SHAKE, TIER_2_FINAL_POWER_REVEAL_SHAKE_DURATION, TIER_2_FINAL_POWER_REVEAL_SHAKE_FREQUENCY);
 						end);
 					end);
 				end
@@ -249,7 +290,7 @@ function ArtifactPerksMixin:RefreshPowerTiers()
 	self:RefreshFinalPowerForTier(1, self:AreAllGoldMedalsPurchasedByTier(1));
 	self:RefreshFinalPowerForTier(2, self:AreAllPowersPurchasedByTier(2));
 
-	if C_ArtifactUI.GetArtifactTier() >= 2 then
+	if C_ArtifactUI.GetArtifactTier() >= 2 or C_ArtifactUI.IsMaxedByRulesOrEffect() then
 		local finalTier2Button = self:GetFinalPowerButtonByTier(2);
 		if finalTier2Button then
 			self.CrestFrame:ClearAllPoints();
@@ -266,13 +307,30 @@ function ArtifactPerksMixin:RefreshPowerTiers()
 				effect:SetModelByCreatureDisplayID(11686);
 				effect:ApplySpellVisualKit(artifactArtInfo.spellVisualKitID);
 			end
+			
+			self.Tier2ForgingScene:Show();
+			self.Tier2ForgingScene:SetFromModelSceneID(TIER_2_FORGING_MODEL_SCENE_ID, true);
+			local forgingEffect = self.Tier2ForgingScene:GetActorByTag("effect");
+			if ( forgingEffect ) then
+				forgingEffect:SetModelByFileID(TIER_2_FORGING_EFFECT_MODEL_ID);
+				forgingEffect:SetAlpha(0.0);
+				self.Tier2ForgingScene.ForgingEffect = forgingEffect;
+			end
+			
+			self.Tier2SlamEffectModelScene:SetFromModelSceneID(TIER_2_SLAM_EFFECT_MODEL_SCENE_ID, true);
+			local slamEffect = self.Tier2SlamEffectModelScene:GetActorByTag("effect");
+			if ( slamEffect ) then
+				slamEffect:SetModelByFileID(TIER_2_SLAM_EFFECT_MODEL_ID);
+			end
 		else
 			self.CrestFrame:Hide();
 			self.Tier2ModelScene:Hide();
+			self.Tier2SlamEffectModelScene:Hide();
 		end
 	else
 		self.CrestFrame:Hide();
 		self.Tier2ModelScene:Hide();
+		self.Tier2SlamEffectModelScene:Hide();
 	end
 end
 
@@ -324,7 +382,7 @@ function ArtifactPerksMixin:TryRefresh()
 		end
 
 		self.queuePlayingReveal = false;
-		local hasBoughtAnyPowers = C_ArtifactUI.GetTotalPurchasedRanks() > 0;
+		local hasBoughtAnyPowers = ArtifactUI_HasPurchasedAnything();
 		if self.newItem then
 			self.hasBoughtAnyPowers = hasBoughtAnyPowers;
 			self.wasFinalPowerButtonUnlockedByTier = {};
@@ -337,6 +395,7 @@ function ArtifactPerksMixin:TryRefresh()
 			end
 		end
 
+		local finalTier2WasUnlocked = self.wasFinalPowerButtonUnlockedByTier[2];
 		self:RefreshPowers(self.newItem);
 		
 		self.TitleContainer:SetPointsRemaining(C_ArtifactUI.GetPointsRemaining());
@@ -345,9 +404,22 @@ function ArtifactPerksMixin:TryRefresh()
 		self.newItem = nil;
 		self.isAppearanceChanging = nil;
 		
-		if not self.numArtifactTraitsRefunded and C_ArtifactUI.GetArtifactTier() == 2 then
+		if not self.numArtifactTraitsRefunded and (C_ArtifactUI.GetArtifactTier() == 2 or C_ArtifactUI.IsMaxedByRulesOrEffect())then
 			self:ShowTier2();
 			self.CrestFrame.CrestRune1:SetAlpha(1.0);
+			self.CrestFrame.RunePulse:Play();
+			self.Model.BackgroundFront:SetAlpha(self.Model.backgroundFrontTargetAlpha);
+			if C_ArtifactUI.IsMaxedByRulesOrEffect() then
+				local finalTier1Button = self:GetFinalPowerButtonByTier(1);
+				if finalTier1Button then
+					finalTier1Button:Show();
+				end
+				
+				local finalTier2Button = self:GetFinalPowerButtonByTier(2);
+				if finalTier2Button then
+					finalTier2Button:Show();
+				end
+			end
 		end
 		
 		if self.queuePlayingReveal then
@@ -355,20 +427,24 @@ function ArtifactPerksMixin:TryRefresh()
 		elseif self.numArtifactTraitsRefunded then
 			self:AnimateTraitRefund(self.numArtifactTraitsRefunded);
 			self.numArtifactTraitsRefunded = nil;
-		elseif self.wasFinalPowerButtonUnlockedByTier[2] then
-			self:AnimateInCurvedLine(3);
+		elseif not finalTier2WasUnlocked and self.wasFinalPowerButtonUnlockedByTier[2] then
+			self:AnimateInCurvedLine(4);
 		else
 			if C_ArtifactUI:IsAtForge() and self:ShouldShowTierGlow() then 
 				-- We may need to change self.tierGlowSeen to take into account the tier you've seen
 				-- rather than just the artifact ID since you could tier up twice without reloading the UI (in theory?).
 				self:ShowTierGlow();
-				self:StartAnimationWithDelay(TIER_2_GLOW_TIME, function() self:HideTierGlow(); end);
+				self:StartWithDelay(TIER_2_GLOW_TIME, function() self:HideTierGlow(); end);
 			end
 		end
 	end
 end
 
 function ArtifactPerksMixin:HasPurchasedAnythingInCurrentTier()
+	if C_ArtifactUI.IsMaxedByRulesOrEffect() then
+		return true;
+	end
+	
 	local tier = C_ArtifactUI.GetArtifactTier();
 	if tier == 1 then
 		return C_ArtifactUI.GetTotalPurchasedRanks() > 0;
@@ -652,7 +728,9 @@ function ArtifactPerksMixin:GenerateCurvedLine(startButton, endButton, state, ar
 	-- Catmullrom splines are not quadratic so they cannot perfectly fit a circle, add enough points so that the sampling will produce something close enough to a circle
 	-- Keeping this as a spline for now in case we need to connect something non-circular
 	local NUM_SLICES = 10;
-	for angle = 0, totalAngle, totalAngle / NUM_SLICES do
+	local anglePerSlice = totalAngle / (NUM_SLICES - 1);
+	for slice = 1, NUM_SLICES do
+		local angle = (slice - 1) * anglePerSlice;
 		local x = math.cos(angle + angleOffset) * lengthToEdge;
 		local y = math.sin(angle + angleOffset) * lengthToEdge;
 		spline:AddPoint(x, y);
@@ -780,7 +858,7 @@ function ArtifactPerksMixin:RefreshDependencies(powers)
 		end
 
 		-- Artificially link the starting and last power if they're both purchased to complete the circle
-		if lastTier2Power and lastTier2Power:IsCompletelyPurchased() then
+		if lastTier2Power and lastTier2Power:IsCompletelyPurchased() and lastTier2Power:HasSpentAny() then
 			local startingTier2Power = self:GetStartingPowerButtonByTier(2);
 			if startingTier2Power and startingTier2Power:IsCompletelyPurchased() and not startingTier2Power.links[lastTier2Power:GetPowerID()] then
 				local lineContainer = self:GenerateCurvedLine(lastTier2Power, startingTier2Power, ArtifactLineMixin.LINE_STATE_CONNECTED, artifactArtInfo);
@@ -849,7 +927,14 @@ function ArtifactPerksMixin:OnRelicSlotMouseLeave(relicSlotIndex)
 	self:RefreshCursorHighlights();
 end
 
+function ArtifactPerksMixin:ClearAllRelicPowerHighlights()
+	local powers = C_ArtifactUI.GetPowers();
+	RelicHighlightHelper(self, false, unpack(powers));
+end
+
 function ArtifactPerksMixin:ShowHighlightForRelicItemID(itemID, itemLink)
+	self:ClearAllRelicPowerHighlights();
+
 	local couldFitInAnySlot = false;
 	for relicSlotIndex = 1, C_ArtifactUI.GetNumRelicSlots() do
 		if C_ArtifactUI.CanApplyRelicItemIDToSlot(itemID, relicSlotIndex) then
@@ -941,6 +1026,7 @@ function ArtifactPerksMixin:HideTier2()
 	end
 
 	self.Tier2ModelScene:Hide();
+	self.Tier2SlamEffectModelScene:Hide();
 end
 
 function ArtifactPerksMixin:ShowTier2()
@@ -986,6 +1072,15 @@ function ArtifactPerksMixin:TraitRefundSetup(numTraitsRefunded)
 	self.TitleContainer.PointsRemainingLabel:SnapToTarget();
 	self:HideTier2();
 	if self:GetFinalPowerButtonByTier(1) then self:GetFinalPowerButtonByTier(1).Rank:SetText(1 + numTraitsRefunded); end
+	
+	local startingSound = SOUNDKIT.UI_72_ARTIFACT_FORGE_FINAL_TRAIT_REFUND_START;
+	local loopingSound = SOUNDKIT.UI_72_ARTIFACT_FORGE_FINAL_TRAIT_REFUND_LOOP;
+
+	local endingSound = nil;
+	local loopStartDelay = ARTIFACT_TIER_2_SOUND_REFUND_LOOP_START_DELAY;
+	local loopEndDelay = ARTIFACT_TIER_2_SOUND_REFUND_LOOP_STOP_DELAY;
+	local loopFadeTime = ARTIFACT_TIER_2_SOUND_REFUND_LOOP_FADE_OUT_TIME;
+	self.traitRefundSoundEmitter = CreateLoopingSoundEffectEmitter(startingSound, loopingSound, endingSound, loopStartDelay, loopEndDelay, loopFadeTime);
 end
 
 function ArtifactPerksMixin:OnTraitsRefunded(numArtifactTraitsRefunded, refundedTier)
@@ -993,34 +1088,53 @@ function ArtifactPerksMixin:OnTraitsRefunded(numArtifactTraitsRefunded, refunded
 	self.perksDirty = true;
 end
 
-function ArtifactPerksMixin:StartAnimationWithDelay(delay, callback, iterations)
+function ArtifactPerksMixin:StartWithDelay(delay, callback, iterations)
 	if not iterations then iterations = 1; end
-	self.animationTimers[#self.animationTimers + 1] = C_Timer.NewTicker(delay, callback, iterations);
+	self.callbackTimers[#self.callbackTimers + 1] = C_Timer.NewTicker(delay, callback, iterations);
 end
 
 function ArtifactPerksMixin:CancelAllTimedAnimations()
-	for i, timer in ipairs(self.animationTimers) do
+	for i, timer in ipairs(self.callbackTimers) do
 		timer:Cancel();
 	end
 	
-	self.animationTimers = {};
+	self.callbackTimers = {};
+	
+	if self.traitRefundSoundEmitter then
+		self.traitRefundSoundEmitter:CancelLoopingSound();
+	end
 end
 
 function ArtifactPerksMixin:AnimateTraitRefund(numTraitsRefunded)
 	self:CancelAllTimedAnimations();
+	self.CrestFrame.RunePulse:Stop();
+
+	local forgingEffect = self.Tier2ForgingScene:GetActorByTag("effect");
+	if ( forgingEffect ) then
+		forgingEffect:SetAlpha(0.0);
+		self:StartWithDelay(TIER_2_FORGE_EFFECT_FADE_IN_DELAY, function ()
+			self.Tier2ForgingScene.ForgingEffectAnimIn:Play();
+		end);
+	end
+
+	self:StartWithDelay(TIER_2_BACKGROUND_FRONT_INTENSITY_IN_DELAY, function ()
+		self.Model.ForgingEffectAnimIn:Play();
+	end);
 
 	local button = self:GetFinalPowerButtonByTier(1);
 	if not button or numTraitsRefunded == 0 then
 		self:HideTier2();
-		self:StartAnimationWithDelay(ARTIFACT_TIER_2_REVEAL_START_DELAY, function ()
+		self:StartWithDelay(ARTIFACT_TIER_2_REVEAL_START_DELAY, function ()
 			self:AnimateInTierTwoReveal();
 		end);
 		
 		return;
 	end
-	
+
 	self:TraitRefundSetup(numTraitsRefunded);
-	self:StartAnimationWithDelay(ARTIFACT_TIER_2_REVEAL_START_DELAY, function ()
+	self:StartWithDelay(ARTIFACT_TIER_2_REVEAL_START_DELAY, function ()
+		self.traitRefundSoundEmitter:StartLoopingSound();
+		
 		-- This is the time it takes to animate the floating numbers.
 		self.TitleContainer.PointsRemainingLabel:SetAnimatedDurationTimeSec(0.6 + ARTIFACT_TIER_2_REFUND_NUMBER_TICK_SPEED * numTraitsRefunded);
 		self.TitleContainer.PointsRemainingLabel:SetAnimatedValue(C_ArtifactUI.GetPointsRemaining());
@@ -1033,7 +1147,7 @@ function ArtifactPerksMixin:AnimateTraitRefund(numTraitsRefunded)
 		sourceX = sourceX + (button:GetWidth() / 2);
 		
 		local currentRank = numTraitsRefunded + 1;
-		self:StartAnimationWithDelay(ARTIFACT_TIER_2_REFUND_NUMBER_TICK_SPEED, function ()
+		self:StartWithDelay(ARTIFACT_TIER_2_REFUND_NUMBER_TICK_SPEED, function ()
 			if ( currentRank <= 1 ) then return; end
 			local numberIndex = 2 + (numTraitsRefunded - currentRank);
 			if not button.FloatingNumbers or not button.FloatingNumbers[numberIndex] then
@@ -1052,7 +1166,11 @@ function ArtifactPerksMixin:AnimateTraitRefund(numTraitsRefunded)
 			currentRank = currentRank - 1;
 			button.Rank:SetText(currentRank);
 			if ( currentRank <= 1 ) then
-				self:StartAnimationWithDelay(ARTIFACT_TIER_2_RUNE_FLASH_DELAY, function ()
+				self:StartWithDelay(ARTIFACT_TIER_2_SOUND_REFUND_END_DELAY, function ()
+					self.traitRefundSoundEmitter:FinishLoopingSound();
+				end);
+	
+				self:StartWithDelay(ARTIFACT_TIER_2_RUNE_FLASH_DELAY, function ()
 					self:AnimateInTierTwoReveal();
 				end);
 			end
@@ -1062,8 +1180,10 @@ end
 
 function ArtifactPerksMixin:AnimateInTierTwoReveal()
 	self.TitleContainer.PointsRemainingLabel:SnapToTarget();
+	PlaySound(SOUNDKIT.UI_72_ARTIFACT_FORGE_ACTIVATE_FINAL_TIER);
+	
 	self.CrestFrame.IntroCrestAnim:Play();
-	self:StartAnimationWithDelay(ARTIFACT_TIER_2_CONSTELLATION_DELAY, function ()
+	self:StartWithDelay(ARTIFACT_TIER_2_CONSTELLATION_DELAY, function ()
 		self:AnimateInTierTwoPowers();
 	end);
 end
@@ -1075,7 +1195,7 @@ function ArtifactPerksMixin:AnimateInTierTwoPowers()
 	
 	for i = 1, self.numUsedCurvedLines do
 		local lineContainer = self.CurvedDependencyLines[i];
-		lineContainer.Fill:SetVertexColor(lineContainer.disconnectedColor:GetRGB());
+		lineContainer.Fill:SetVertexColor(lineContainer.connectedColor:GetRGB());
 		lineContainer:SetAlpha(0.0);
 	end
 	
@@ -1084,20 +1204,24 @@ function ArtifactPerksMixin:AnimateInTierTwoPowers()
 	
 	self:PlayReveal(2);
 	
-	self:StartAnimationWithDelay(ARTIFACT_TIER_2_FIRST_CURVED_LINE_DELAY, function ()
+	self:StartWithDelay(ARTIFACT_TIER_2_FIRST_CURVED_LINE_DELAY, function ()
+		self:AnimateInCurvedLine(3);
+	end);
+	
+	self:StartWithDelay(ARTIFACT_TIER_2_SECOND_CURVED_LINE_DELAY, function ()
 		self:AnimateInCurvedLine(1);
 	end);
 	
-	self:StartAnimationWithDelay(ARTIFACT_TIER_2_SECOND_CURVED_LINE_DELAY, function ()
+	self:StartWithDelay(ARTIFACT_TIER_2_THIRD_CURVED_LINE_DELAY, function ()
 		self:AnimateInCurvedLine(2);
 	end);
 	
-	self:StartAnimationWithDelay(ARTIFACT_TIER_2_CREST_DELAY, function ()
+	self:StartWithDelay(ARTIFACT_TIER_2_CREST_DELAY, function ()
 		self:AnimateInCrest();
 	end);
 end
 
-local MAX_CURVED_LINE_FADE_DELAY = ARTIFACT_TIER_2_CURVED_LINE_TICK_SPEED * (NUM_CURVED_LINE_SEGEMENTS / 2);
+local MAX_CURVED_LINE_FADE_DELAY = ARTIFACT_TIER_2_CURVED_LINE_TICK_SPEED * (NUM_CURVED_LINE_SEGEMENTS / 2 - 0.5);
 function ArtifactPerksMixin:AnimateInCurvedLine(curvedLineIndex)
 	if curvedLineIndex * NUM_CURVED_LINE_SEGEMENTS > self.numUsedCurvedLines then
 		return;
@@ -1108,7 +1232,7 @@ function ArtifactPerksMixin:AnimateInCurvedLine(curvedLineIndex)
 		local lineContainer = self.CurvedDependencyLines[baseIndex + i];
 		lineContainer:SetAlpha(0.0);
 
-		local delay = ARTIFACT_TIER_2_CURVED_LINE_TICK_SPEED * math.abs(NUM_CURVED_LINE_SEGEMENTS / 2 - i);
+		local delay = ARTIFACT_TIER_2_CURVED_LINE_TICK_SPEED * math.abs(NUM_CURVED_LINE_SEGEMENTS / 2 - (i - 0.5));
 		lineContainer.Tier2FadeInAnim.Background:SetStartDelay(delay);
 		lineContainer.Tier2FadeInAnim.Background:SetEndDelay(MAX_CURVED_LINE_FADE_DELAY - delay);
 		lineContainer.Tier2FadeInAnim.Fill:SetStartDelay(delay);
@@ -1129,14 +1253,36 @@ function ArtifactPerksMixin:PlayReveal(tier)
 			end
 		end
 
-		PlaySound("UI_70_Artifact_Forge_Trait_FirstTrait");
+		if tier == 1 then
+			PlaySound(SOUNDKIT.UI_70_ARTIFACT_FORGE_TRAIT_FIRST_TRAIT);
+		end
 	end
 end
 
 function ArtifactPerksMixin:AnimateInCrest()
+	local forgingEffect = self.Tier2ForgingScene:GetActorByTag("effect");
+	if ( forgingEffect ) then
+		self.ForgingEffect = forgingEffect;
+		self:StartWithDelay(TIER_2_FORGE_EFFECT_FADE_OUT_DELAY, function ()
+			self.Tier2ForgingScene.ForgingEffectAnimOut:Play();
+		end);
+	end
+	
+	self:StartWithDelay(TIER_2_BACKGROUND_FRONT_INTENSITY_OUT_DELAY, function ()
+		self.Model.ForgingEffectAnimOut:Play();
+	end);
+
 	self.CrestFrame.RuneAnim:Play();
-	self:StartAnimationWithDelay(ARTIFACT_TIER_2_SHAKE_DELAY, function ()
-		ShakeFrameRandom(self:GetParent(), ARTIFACT_TIER_2_SHAKE_AMOUNT, ARTIFACT_TIER_2_SHAKE_DURATION, ARTIFACT_TIER_2_SHAKE_FREQUENCY);
+	self:StartWithDelay(ARTIFACT_TIER_2_SHAKE_DELAY, function ()
+		ShakeFrame(self:GetParent(), ARTIFACT_TIER_2_SHAKE, ARTIFACT_TIER_2_SHAKE_DURATION, ARTIFACT_TIER_2_SHAKE_FREQUENCY);
+	end);
+	
+	self:StartWithDelay(TIER_2_SLAM_EFFECT_DELAY, function ()
+		self.Tier2SlamEffectModelScene:Show();
+		self.CrestFrame.CracksAnim:Play();
+		self:StartWithDelay(TIER_2_SLAM_EFFECT_HIDE_DELAY, function ()
+			self.Tier2SlamEffectModelScene:Hide();
+		end);
 	end);
 end
 
@@ -1251,7 +1397,16 @@ function ArtifactTitleTemplateMixin:OnRelicSlotMouseEnter(relicSlot)
 		end
 	elseif relicSlot.relicLink then
 		GameTooltip:SetOwner(relicSlot, "ANCHOR_BOTTOMRIGHT", 0, 10);
-		GameTooltip:SetHyperlink(relicSlot.relicLink);
+		GameTooltip:SetSocketedRelic(relicSlot.relicSlotIndex);
+		local currentRank, canAddTalent, artifactLevelRequiredForNextRank = C_ArtifactUI.GetRelicSlotRankInfo(relicSlot.relicSlotIndex);
+		if ( canAddTalent ) then
+			GameTooltip:AddLine(" ");
+			GameTooltip:AddLine(ARTIFACT_RELIC_TALENT_AVAILABLE, NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, true);
+		elseif ( artifactLevelRequiredForNextRank ) then
+			GameTooltip:AddLine(" ");
+			GameTooltip:AddLine(ARTIFACT_RELIC_SLOT_NEXT_RANK:format(currentRank + 1, artifactLevelRequiredForNextRank), NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, true);
+		end
+		GameTooltip:Show();
 	elseif relicSlot.relicType then
 		GameTooltip:SetOwner(relicSlot, "ANCHOR_BOTTOMRIGHT", 0, 10);
 		local slotName = _G["RELIC_SLOT_TYPE_" .. relicSlot.relicType:upper()];
@@ -1274,13 +1429,16 @@ StaticPopupDialogs["CONFIRM_RELIC_REPLACE"] = {
 	button1 = ACCEPT,
 	button2 = CANCEL,
 
-	OnAccept = function(self, relicSlotIndex)
-		C_ArtifactUI.ApplyCursorRelicToSlot(relicSlotIndex);
-		ArtifactFrame.PerksTab.TitleContainer.RelicSlots[relicSlotIndex].GlowAnim:Play();
-		PlaySound("UI_70_Artifact_Forge_Relic_Place");
+	OnAccept = function(self, data)
+		data.titleContainer:ApplyCursorRelicToSlot(data.relicSlotIndex);
 	end,
 	OnCancel = function()
 		ClearCursor();
+	end,
+	OnUpdate = function (self)
+		if ( not CursorHasItem() ) then
+			self:Hide();
+		end
 	end,
 
 	showAlert = true,
@@ -1289,32 +1447,39 @@ StaticPopupDialogs["CONFIRM_RELIC_REPLACE"] = {
 	hideOnEscape = true,
 };
 
+function ArtifactTitleTemplateMixin:ApplyCursorRelicToSlot(relicSlotIndex)
+	C_ArtifactUI.ApplyCursorRelicToSlot(relicSlotIndex);
+	self.RelicSlots[relicSlotIndex].GlowAnim:Play();
+	PlaySound(SOUNDKIT.UI_70_ARTIFACT_FORGE_RELIC_PLACE);
+end
+
 function ArtifactTitleTemplateMixin:OnRelicSlotClicked(relicSlot)
 	for i = 1, #self.RelicSlots do
 		if self.RelicSlots[i] == relicSlot then
 			if C_ArtifactUI.CanApplyCursorRelicToSlot(i) then
 				local itemName = C_ArtifactUI.GetRelicInfo(i);
 				if itemName then
-					StaticPopup_Show("CONFIRM_RELIC_REPLACE", nil, nil, i);
+					StaticPopup_Show("CONFIRM_RELIC_REPLACE", nil, nil, { titleContainer = self, relicSlotIndex = i });
 				else
-					C_ArtifactUI.ApplyCursorRelicToSlot(i);
-					self.RelicSlots[i].GlowAnim:Play();
-					PlaySound("UI_70_Artifact_Forge_Relic_Place");
+					self:ApplyCursorRelicToSlot(i);
 				end
+				return true;
 			else
 				local _, itemID = GetCursorInfo();
 				if itemID and IsArtifactRelicItem(itemID) then
 					UIErrorsFrame:AddMessage(RELIC_SLOT_INVALID, 1.0, 0.1, 0.1, 1.0);
+					return true;
 				else
 					if IsModifiedClick() then
 						local _, _, _, itemLink = C_ArtifactUI.GetRelicInfo(i);
-						HandleModifiedItemClick(itemLink);
+						return HandleModifiedItemClick(itemLink);
 					end
 				end
 			end
 			break;
 		end
 	end
+	return false;
 end
 
 function ArtifactTitleTemplateMixin:RefreshRelicTooltips()
@@ -1351,6 +1516,7 @@ function ArtifactTitleTemplateMixin:EvaluateRelics()
 			relicSlot.Icon:SetAtlas("Relic-SlotBG", true);
 			relicSlot.Glass:Hide();
 			relicSlot.relicLink = nil;
+			relicSlot.Rank:Hide();
 		else
 			local relicName, relicIcon, relicType, relicLink = C_ArtifactUI.GetRelicInfo(i);
 
@@ -1373,6 +1539,20 @@ function ArtifactTitleTemplateMixin:EvaluateRelics()
 				relicSlot.Glass:Hide();
 			end
 			relicSlot.relicLink = relicLink;
+
+			local currentRank, canAddTalent = C_ArtifactUI.GetRelicSlotRankInfo(i);
+			if currentRank then
+				relicSlot.Rank:Show();
+				relicSlot.Rank.Text:SetText(currentRank);
+				if ( canAddTalent ) then
+					relicSlot.Rank.GlowAnim:Play();
+				else
+					relicSlot.Rank.GlowAnim:Stop();
+					relicSlot.Rank.Glow:SetAlpha(0);
+				end
+			else
+				relicSlot.Rank:Hide();
+			end
 		end
 
 		

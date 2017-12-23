@@ -2,7 +2,7 @@
 ..\..\FrameXML\UI.xsd">
 	<Script file="Blizzard_ArtifactPerks.lua"/>
 
-	<Frame name="ArtifactDependencyLineTemplate" frameLevel="2" parentArray="DependencyLines" mixin="ArtifactLineMixin" virtual="true">
+	<Frame name="ArtifactDependencyLineTemplate" frameLevel="1200" parentArray="DependencyLines" mixin="ArtifactLineMixin" virtual="true">
 		<Layers>
 			<Layer level="OVERLAY" textureSubLevel="-3">
 				<Line parentKey="Background" file="Interface/Artifacts/_Artifacts-DependencyBar-BG" thickness="12" hWrapMode="REPEAT" alpha="0" />
@@ -74,6 +74,39 @@
 		</Animations>
 	</Frame>
 
+	<Frame name="ArtifactRelicRankTemplate" virtual="true">
+		<Size x="23" y="23"/>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture parentKey="Glow" atlas="Relic-Rankframe-glow" useAtlasSize="true" alpha="0">
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="BORDER">
+				<Texture parentKey="Background" atlas="Relic-Rankframe" useAtlasSize="true">
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="ARTWORK">
+				<FontString parentKey="Text" inherits="GameFontNormalSmall">
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Animations>
+			<AnimationGroup parentKey="GlowAnim" setToFinalAlpha="true" looping="REPEAT">
+				<Alpha childKey="Glow" smoothing="NONE" duration="1" order="1" fromAlpha="1" toAlpha="0"/>
+				<Alpha childKey="Glow" startDelay="1" smoothing="NONE" duration="1" order="1" fromAlpha="0" toAlpha="1"/>
+			</AnimationGroup>
+		</Animations>
+	</Frame>
+
 	<Button name="ArtifactsRelicSlotTemplate" motionScriptsWhileDisabled="true" virtual="true">
 		<Size x="72" y="72" />
 
@@ -126,7 +159,18 @@
 		<NormalTexture parentKey="NormalTexture" />
 		<HighlightTexture parentKey="HighlightTexture" alphaMode="ADD" />
 
+		<Frames>
+			<Frame parentKey="Rank" inherits="ArtifactRelicRankTemplate">
+				<Anchors>
+					<Anchor point="BOTTOMLEFT" x="25" y="6"/>
+				</Anchors>
+			</Frame>
+		</Frames>
+
 		<Scripts>
+			<OnLoad>
+				self.UpdateTooltip = self:GetScript("OnEnter");
+			</OnLoad>
 			<OnEnter>
 				self:GetParent():OnRelicSlotMouseEnter(self);
 			</OnEnter>
@@ -191,7 +235,7 @@
 		</Animations>
 	</Frame>
 
-	<PlayerModel name="ArtifactsModelTemplate" useParentLevel="true" virtual="true">
+	<PlayerModel name="ArtifactsModelTemplate" virtual="true">
 		<Size x="895" y="615" />
 		<Anchors>
 			<Anchor point="BOTTOMLEFT"/>
@@ -209,6 +253,7 @@
 			</OnEvent>
 			<OnModelLoaded function="ArtifactsModelTemplate_OnModelLoaded" />
 		</Scripts>
+		<ViewInsets left="88" right="88" top="0" bottom="0"/>
 	</PlayerModel>
 
 	<Frame name="ArtifactPerksTabTemplate" mixin="ArtifactPerksMixin" virtual="true" useParentLevel="true">
@@ -216,15 +261,12 @@
 			<Layer level="BORDER" textureSubLevel="-5">
 				<Texture parentKey="BackgroundBack" />
 			</Layer>
-			<Layer level="BORDER" textureSubLevel="-4">
-				<Texture parentKey="BackgroundBackShadow" atlas="Artifacts-BG-Shadow" useAtlasSize="true" />
-			</Layer>
 			<Layer level="OVERLAY" textureSubLevel="-6">
 				<Texture parentKey="HeaderBackground" atlas="Artifacts-HeaderBG" />
 			</Layer>
 		</Layers>
 		<Frames>
-			<Frame parentKey="TitleContainer" mixin="ArtifactTitleTemplateMixin" useParentLevel="true">
+			<Frame parentKey="TitleContainer" mixin="ArtifactTitleTemplateMixin" frameLevel="2000">
 				<Anchors>
 					<Anchor point="TOPLEFT" />
 					<Anchor point="TOPRIGHT" />
@@ -277,6 +319,68 @@
 					<OnUpdate method="OnUpdate" />
 				</Scripts>
 			</Frame>
+			<Frame parentKey="RelicTalentAlert" inherits="GlowBoxTemplate" frameStrata="DIALOG">
+				<Size x="220" y="100"/>
+				<Anchors>
+					<Anchor point="TOP" relativeKey="$parent.RelicSlot1" relativePoint="BOTTOM" x="0" y="-20"/>
+				</Anchors>
+				<Layers>
+					<Layer level="ARTWORK">
+						<FontString parentKey="Text" inherits="GameFontHighlight" text="ARTIFACT_RELIC_TALENT_AVAILABLE">
+							<Size x="188" y="0"/>
+							<Anchors>
+								<Anchor point="TOPLEFT" x="16" y="-24"/>
+							</Anchors>
+						</FontString>
+						<Texture parentKey="ArrowUp" inherits="HelpPlateArrowUP">
+							<Size x="53" y="21"/>
+							<Anchors>
+								<Anchor point="BOTTOM" relativePoint="TOP" x="0" y="-1"/>
+							</Anchors>
+						</Texture>
+					</Layer>
+					<Layer level="BORDER">
+						<Texture parentKey="ArrowGlowUp" inherits="HelpPlateArrow-GlowUP" alphaMode="ADD" alpha="0.5">
+							<Size x="53" y="21"/>
+							<Anchors>
+								<Anchor point="BOTTOM" relativePoint="TOP" x="0" y="-1"/>
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Frames>
+					<Button parentKey="CloseButton" inherits="UIPanelCloseButton">
+						<Anchors>
+							<Anchor point="TOPRIGHT" x="6" y="6"/>
+						</Anchors>
+					</Button>
+				</Frames>
+				<Scripts>
+					<OnLoad>
+						self:SetHeight(self.Text:GetHeight() + 43);
+					</OnLoad>
+				</Scripts>
+			</Frame>
+			<ModelScene parentKey="Tier2ForgingScene" setAllPoints="true" inherits="ModelSceneMixinTemplate" frameLevel="300">
+				<Layers>
+					<Layer level="OVERLAY" textureSubLevel="-1">
+						<Texture parentKey="BackgroundMiddle" alpha="0">
+							<Anchors>
+								<Anchor point="TOPLEFT"/>
+								<Anchor point="BOTTOMRIGHT"/>
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Animations>
+					<AnimationGroup parentKey="ForgingEffectAnimIn" setToFinalAlpha="true">
+						<Alpha childKey="ForgingEffect" duration="0.5" order="1" fromAlpha="0" toAlpha="1"/>
+					</AnimationGroup>
+					<AnimationGroup parentKey="ForgingEffectAnimOut" setToFinalAlpha="true">
+						<Alpha childKey="ForgingEffect" duration="0.5" order="1" fromAlpha="1" toAlpha="0"/>
+					</AnimationGroup>
+				</Animations>
+			</ModelScene>
 			<PlayerModel parentKey="AltModel" inherits="ArtifactsModelTemplate" frameLevel="500"/>
 			<PlayerModel parentKey="Model" inherits="ArtifactsModelTemplate" frameLevel="500">
 				<Layers>
@@ -288,12 +392,37 @@
 							</Anchors>
 						</Texture>
 					</Layer>
+					<Layer level="OVERLAY" textureSubLevel="2">
+						<Texture parentKey="BackgroundBackShadow" atlas="Artifacts-BG-Shadow" useAtlasSize="true" />
+					</Layer>
 				</Layers>
+				<Animations>
+					<AnimationGroup parentKey="ForgingEffectAnimIn" setToFinalAlpha="true">
+						<Alpha parentKey="Fade" childKey="BackgroundFront" duration="0.5" order="1" fromAlpha="0.5" toAlpha="0"/>
+					</AnimationGroup>
+					<AnimationGroup parentKey="ForgingEffectAnimOut" setToFinalAlpha="true">
+						<Alpha parentKey="Fade" childKey="BackgroundFront" duration="0.5" order="1" fromAlpha="0" toAlpha="0.5"/>
+					</AnimationGroup>
+				</Animations>
 			</PlayerModel>
 			<Frame parentKey="CrestFrame" frameLevel="1000">
 				<Size x="100" y="100"/>
 				<Layers>
 					<!-- Animation Textures Start -->
+					<Layer level="OVERLAY" textureSubLevel="-7">
+						<Texture parentKey="Cracks" atlas="Artifacts-Anim-CrackedGround" alpha="0" alphaMode="ADD">
+							<Size x="400" y="400"/>
+							<Anchors>
+								<Anchor point="CENTER" x="10" y="-10"/>
+							</Anchors>
+						</Texture>
+						<Texture parentKey="Cracks2" atlas="Artifacts-Anim-CrackedGround" alpha="0" alphaMode="ADD">
+							<Size x="400" y="400"/>
+							<Anchors>
+								<Anchor point="CENTER" x="10" y="-10"/>
+							</Anchors>
+						</Texture>
+					</Layer>
 					<Layer level="OVERLAY" textureSubLevel="-8">
 						<Texture parentKey="CrestRune1" hidden="false" alpha="0" alphaMode="BLEND" atlas="Artifacts-DeathKnightFrost-BG-Rune" useAtlasSize="true">
 							<Anchors>
@@ -514,6 +643,11 @@
 					<!-- Animation Textures -->
 				</Layers>
 				<Animations>
+					<AnimationGroup parentKey="RunePulse" looping="BOUNCE">
+						<Alpha childKey="CrestRune1" duration="4" order="1" fromAlpha="1" toAlpha=".5"/>
+						<Alpha childKey="CrestRune2" duration="5" order="1" fromAlpha="0" toAlpha="1"/>
+						<Alpha childKey="CrestRune3" duration="3" order="1" fromAlpha="0" toAlpha=".5"/>
+					</AnimationGroup>
 					<AnimationGroup parentKey="RuneAnim" setToFinalAlpha="true">
 						<Alpha childKey="CrestSparks" duration="0.01" order="1" fromAlpha="0" toAlpha="1"/>
 						<Alpha childKey="CrestSparks" startDelay="0.01" smoothing="OUT" duration="0.32" order="1" fromAlpha="1" toAlpha="0"/>
@@ -530,11 +664,11 @@
 						<Alpha childKey="CrestGlowies3" duration="0.01" order="1" fromAlpha="0" toAlpha="1"/>
 						<Alpha childKey="CrestGlowies3" startDelay="0.01" smoothing="OUT" duration="0.32" order="1" fromAlpha="1" toAlpha="0"/>
 						<Scale childKey="CrestGlowies3" smoothing="NONE" duration="0.33" order="1" fromScaleX="4.4" fromScaleY="4.4" toScaleX="0.3" toScaleY="0.3"/>
-						<Alpha childKey="CrestGlowies4" startDelay="0.53" smoothing="OUT" duration=".9" order="1" fromAlpha="1" toAlpha="0"/>
+						<Alpha childKey="CrestGlowies4" startDelay="0.53" smoothing="OUT" duration="1.3" order="1" fromAlpha="1" toAlpha="0"/>
 						<Scale childKey="CrestGlowies4" startDelay="0.53" smoothing="NONE" duration="2" order="1" fromScaleX=".7" fromScaleY=".7" toScaleX="1.1" toScaleY="1.1"/>
-						<Alpha childKey="CrestGlowies5" startDelay="0.53" smoothing="OUT" duration=".9" order="1" fromAlpha="1" toAlpha="0"/>
+						<Alpha childKey="CrestGlowies5" startDelay="0.53" smoothing="OUT" duration="1.3" order="1" fromAlpha="1" toAlpha="0"/>
 						<Scale childKey="CrestGlowies5" startDelay="0.53" smoothing="NONE" duration="2" order="1" fromScaleX=".7" fromScaleY=".7" toScaleX="1.1" toScaleY="1.1"/>
-						<Alpha childKey="CrestGlowies6" startDelay="0.53" smoothing="OUT" duration=".9" order="1" fromAlpha="1" toAlpha="0"/>
+						<Alpha childKey="CrestGlowies6" startDelay="0.53" smoothing="OUT" duration="1.3" order="1" fromAlpha="1" toAlpha="0"/>
 						<Scale childKey="CrestGlowies6" startDelay="0.53" smoothing="NONE" duration="2" order="1" fromScaleX=".7" fromScaleY=".7" toScaleX="1.1" toScaleY="1.1"/>
 						<Alpha childKey="CrestRune1" duration="0.33" order="1" fromAlpha="0" toAlpha="1"/>
 						<Scale childKey="CrestRune1" smoothing="IN" duration="0.33" order="1" fromScaleX="1.4" fromScaleY="1.4" toScaleX="1" toScaleY="1"/>
@@ -571,6 +705,7 @@
 						<Scripts>
 							<OnFinished>
 								self:GetParent():GetParent().Tier2ModelScene:Show();
+								self:GetParent().RunePulse:Play();
 							</OnFinished>
 						</Scripts>
 					</AnimationGroup>
@@ -611,12 +746,24 @@
 						</Scale>
 						<Alpha childKey="PointBurstRight" startDelay="0.3" duration="0.5" order="1" fromAlpha="1" toAlpha="0"/>
 					</AnimationGroup>
+					<AnimationGroup parentKey="CracksAnim" setToFinalAlpha="true">
+						<Alpha childKey="Cracks" duration="0.01" order="1" fromAlpha="0" toAlpha="1"/>
+						<Alpha parentKey="Fade" childKey="Cracks" duration="1.4" order="1" fromAlpha="1" toAlpha="0"/>
+						<Alpha childKey="Cracks2" duration="0.01" order="1" fromAlpha="0" toAlpha="1"/>
+						<Alpha parentKey="Fade2" childKey="Cracks2" duration="1.4" order="1" fromAlpha="1" toAlpha="0"/>
+					</AnimationGroup>
 				</Animations>
 			</Frame>
 			<ModelScene parentKey="Tier2ModelScene" inherits="ModelSceneMixinTemplate" frameLevel="700">
 				<Size x="350" y="350"/>
 				<Anchors>
 					<Anchor point="CENTER" relativeKey="$parent.CrestFrame" relativePoint="CENTER" x="0" y="0"/>
+				</Anchors>
+			</ModelScene>
+			<ModelScene parentKey="Tier2SlamEffectModelScene" inherits="ModelSceneMixinTemplate" hidden="true" frameLevel="700">
+				<Size x="500" y="500"/>
+				<Anchors>
+					<Anchor point="CENTER" relativeKey="$parent.Tier2ModelScene" relativePoint="CENTER" x="0" y="0"/>
 				</Anchors>
 			</ModelScene>
 		</Frames>
