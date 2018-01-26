@@ -5,6 +5,8 @@ local SEAL_QUESTS = {
 	[43926] = { bgAtlas = "QuestBG-Horde", text = "|cff480404"..QUEST_WARCHIEF_VOLJIN.."|r", sealAtlas = "Quest-Horde-WaxSeal"},
 	[47221] = { bgAtlas = "QuestBG-TheHandofFate", },
 	[47835] = { bgAtlas = "QuestBG-TheHandofFate", },
+	[49929] = { bgAtlas = "QuestBG-Alliance", text = "|cff042c54"..QUEST_KING_ANDUIN_WRYNN.."|r", sealAtlas = "Quest-Alliance-WaxSeal" },
+	[49930] = { bgAtlas = "QuestBG-Horde", text = "|cff480404"..QUEST_WARCHIEF_SYLVANAS_WINDRUNNER.."|r", sealAtlas = "Quest-Horde-WaxSeal" },
 };
 
 function QuestInfoTimerFrame_OnUpdate(self, elapsed)
@@ -574,7 +576,7 @@ function QuestInfo_ShowRewards()
 			local spellBucket = spellBuckets[spellBucketType];
 			if spellBucket then
 				for i, rewardSpellIndex in ipairs(spellBucket) do
-					local texture, name, isTradeskillSpell, isSpellLearned, hideSpellLearnText, isBoostSpell, garrFollowerID = spellGetter(rewardSpellIndex);
+					local texture, name, isTradeskillSpell, isSpellLearned, hideSpellLearnText, isBoostSpell, garrFollowerID, spellID = spellGetter(rewardSpellIndex);
 					-- hideSpellLearnText is a quest flag
 					if i == 1 and not hideSpellLearnText then
 						local header = rewardsFrame.spellHeaderPool:Acquire();
@@ -605,6 +607,7 @@ function QuestInfo_ShowRewards()
 						spellRewardFrame.Icon:SetTexture(texture);
 						spellRewardFrame.Name:SetText(name);
 						spellRewardFrame.rewardSpellIndex = rewardSpellIndex;
+						spellRewardFrame.spellID = spellID;
 						spellRewardFrame:Show();
 
 						anchorFrame = spellRewardFrame;
@@ -773,6 +776,7 @@ function QuestInfo_ShowRewards()
 				SetItemButtonTexture(questItem, texture);
 				SetItemButtonTextureVertexColor(questItem, 1.0, 1.0, 1.0);
 				SetItemButtonNameFrameVertexColor(questItem, 1.0, 1.0, 1.0);
+				SetItemButtonQuality(questItem);
 
 				if ( buttonIndex > 1 ) then
 					if ( mod(buttonIndex,2) == 1 ) then
